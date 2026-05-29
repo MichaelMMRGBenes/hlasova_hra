@@ -149,6 +149,13 @@
                 <option value="hard">Těžká (Rychlá mašina)</option>
             </select></p>
 
+            <p><label>Délka trati: </label>
+            <select id="track-length-solo">
+                <option value="7">Krátká (7 překážek)</option>
+                <option value="15" selected>Střední (15 překážek)</option>
+                <option value="30">Dlouhá (30 překážek)</option>
+            </select></p>
+
             <p><label>Mód hry: </label>
             <select id="game-mode-type-solo">
                 <option value="classic">Klasický (Číslice -> Slovo)</option>
@@ -195,6 +202,13 @@
                 <option value="2">2 Hráči (Duel)</option>
                 <option value="3">3 Hráči</option>
                 <option value="4">4 Hráči</option>
+            </select></p>
+
+            <p><label>Délka trati: </label>
+            <select id="track-length-online">
+                <option value="7">Krátká (7 překážek)</option>
+                <option value="15" selected>Střední (15 překážek)</option>
+                <option value="30">Dlouhá (30 překážek)</option>
             </select></p>
 
             <p><label>Mód hry: </label>
@@ -293,7 +307,8 @@
     
     const START_WORLD_X = 120;
     const STEP_X = 110;       
-    const FINISH_LINE_WORLD_X = START_WORLD_X + (10 * STEP_X);
+    let stepsToFinish = 15; // Výchozí počet kroků do cíle
+    let FINISH_LINE_WORLD_X = START_WORLD_X + (stepsToFinish * STEP_X);
 
     const playerColors = ["#3498db", "#e74c3c", "#9b59b6", "#e67e22"];
 
@@ -368,21 +383,20 @@
     function speakTargetNumber(num, lang, forceCancel = false) {
         if (!window.speechSynthesis || currentModeType !== 'translation') return;
         
-        // Zruší předchozí zvuk pouze při nuceném skoku na nové číslo nebo tlačítkem opakování
         if (forceCancel) {
             window.speechSynthesis.cancel();
         } else if (window.speechSynthesis.speaking) {
-            return; // Pokud zrovna mluví, neduplikovat zvuk
+            return; 
         }
 
-        let textToSpeak = languageWordsText[lang][num] || num.toString();
+        // Pokud je číslo <= 10, vezme text, jinak pošle řetězec čísla (TTS enginy ho přečtou nativně v daném jazyce)
+        let textToSpeak = (num <= 10 && languageWordsText[lang]) ? languageWordsText[lang][num] : num.toString();
         const utterance = new SpeechSynthesisUtterance(textToSpeak);
         utterance.lang = lang;
         utterance.rate = 0.9; 
         window.speechSynthesis.speak(utterance);
     }
 
-    // Tlačítko pro opakování výslovnosti
     repeatBtn.addEventListener('click', () => {
         if (gameStarted && currentModeType === 'translation' && myState.currentNumber > 0 && myState.lives > 0) {
             speakTargetNumber(myState.currentNumber, langA, true);
@@ -428,6 +442,10 @@
         langA = document.getElementById('lang-select-solo-a').value;
         langB = (currentModeType === 'translation') ? document.getElementById('lang-select-solo-b').value : langA;
         
+        // Nastavení délky trati pro Solo
+        stepsToFinish = parseInt(document.getElementById('track-length-solo').value);
+        FINISH_LINE_WORLD_X = START_WORLD_X + (stepsToFinish * STEP_X);
+
         myState.name = document.getElementById('player-name-input').value.trim() || "Ty";
         remotePlayers['bot'] = { score: 0, lives: 3, state: 'running', y: 0, jumpProgress: 0, worldX: START_WORLD_X, name: "Počítač (AI)" };
         
@@ -447,11 +465,15 @@
         langA = document.getElementById('lang-select-online-a').value;
         langB = (currentModeType === 'translation') ? document.getElementById('lang-select-online-b').value : langA;
         
+        // Nastavení délky trati pro Online
+        stepsToFinish = parseInt(document.getElementById('track-length-online').value);
+        FINISH_LINE_WORLD_X = START_WORLD_X + (stepsToFinish * STEP_X);
+
         myRole = 'p1'; myState.name = document.getElementById('player-name-input').value.trim() || "Hostitel";
         
         roomRef = db.ref('rooms/' + code);
         roomRef.set({
-            status: 'waiting', maxPlayers: maxPlayersInRoom, modeType: currentModeType, langA: langA, langB: langB,
+            status: 'waiting', maxPlayers: maxPlayersInRoom, modeType: currentModeType, langA: langA, langB: langB, trackLength: stepsToFinish,
             p1: { score: 0, lives: 3, state: 'running', currentNumber: 0, jumpProgress: 0, worldX: START_WORLD_X, name: myState.name }
         });
         
@@ -479,6 +501,10 @@
 
             myRole = 'p' + (activeKeys.length + 1); myState.name = chosenName;
             currentModeType = data.modeType || 'classic'; langA = data.langA; langB = data.langB;
+            
+            // Synchronizace délky trati z DB
+            stepsToFinish = data.trackLength || 15;
+            FINISH_LINE_WORLD_X = START_WORLD_X + (stepsToFinish * STEP_X);
 
             let updates = {};
             updates[myRole] = { score: 0, lives: 3, state: 'running', currentNumber: 0, jumpProgress: 0, worldX: START_WORLD_X, name: myState.name };
@@ -497,6 +523,10 @@
             maxPlayersInRoom = data.maxPlayers;
             currentModeType = data.modeType || 'classic';
             langA = data.langA; langB = data.langB;
+            
+            // Plynulá synchronizace délky trati u připojených hráčů
+            stepsToFinish = data.trackLength || 15;
+            FINISH_LINE_WORLD_X = START_WORLD_X + (stepsToFinish * STEP_X);
             
             let keys = Object.keys(data).filter(k => k.startsWith('p'));
             remotePlayers = {};
@@ -545,19 +575,19 @@
             let keys = [myRole, ...Object.keys(remotePlayers)];
             let updates = { status: 'playing' };
             keys.forEach(k => {
-                updates[k + '/currentNumber'] = Math.floor(Math.random() * (currentModeType === 'translation' ? 10 : 50)) + 1;
+                updates[k + '/currentNumber'] = Math.floor(Math.random() * 100) + 1;
             });
             roomRef.update(updates);
         }
     });
 
+    // Změna rozsahu generování: Nyní plný rozsah 1 až 100
     function getRandomTargetNumber() {
-        return Math.floor(Math.random() * (currentModeType === 'translation' ? 10 : 50)) + 1;
+        return Math.floor(Math.random() * 100) + 1;
     }
 
     function executeStart() {
         gameStarted = true;
-        startMatchBtn.style.none = 'none';
         startMatchBtn.style.display = 'none';
         statusEl.textContent = "BĚŽ!!!";
         
@@ -615,7 +645,6 @@
         }, tickTime);
     }
 
-    // NOVÉ: Kontrola zóny vyřazení (Zóna smrti o 4 pozice pozadu)
     function checkScreenElimination() {
         if (!gameStarted) return;
         
@@ -627,10 +656,8 @@
         let alive = all.filter(p => p.lives > 0);
         if (alive.length === 0) return;
         
-        // Zjištění vedoucího hráče
         let maxWorldX = Math.max(...alive.map(p => p.worldX));
         
-        // Pokud já zaostávám o 4 a více kroků (4 * STEP_X)
         if (myState.lives > 0 && (maxWorldX - myState.worldX) >= 4 * STEP_X) {
             myState.lives = 0;
             myState.state = 'tripping';
@@ -638,7 +665,6 @@
             renderHUD();
         }
         
-        // Pokud bot v solo módu zaostává o 4 kroky
         if (gameMode === 'solo' && remotePlayers['bot'] && remotePlayers['bot'].lives > 0) {
             if ((maxWorldX - remotePlayers['bot'].worldX) >= 4 * STEP_X) {
                 remotePlayers['bot'].lives = 0;
@@ -651,7 +677,6 @@
     function checkWinConditions() {
         if (!gameStarted) return;
         
-        // Nejprve promaž hráče, co zůstali moc pozadu
         checkScreenElimination();
 
         let all = [{ id: myRole, ...myState }];
@@ -666,7 +691,6 @@
             reachedFinish.sort((a,b) => b.worldX - a.worldX); 
             winnerId = reachedFinish[0].id;
         } 
-        // PRAVIDLO POSLEDNÍHO PŘEŽIVŠÍHO: Pokud zbývá v zápase jen 1 živý hráč
         else if (all.length > 1 && alivePlayers.length === 1) {
             winnerId = alivePlayers[0].id;
         }
@@ -720,7 +744,7 @@
         } else if (roomRef) {
             gameMode = 'online';
             if (myRole === 'p1') {
-                roomRef.set({ status: 'ready', maxPlayers: maxPlayersInRoom, modeType: currentModeType, langA: langA, langB: langB,
+                roomRef.set({ status: 'ready', maxPlayers: maxPlayersInRoom, modeType: currentModeType, langA: langA, langB: langB, trackLength: stepsToFinish,
                     p1: { score: 0, lives: 3, state: 'running', currentNumber: 0, jumpProgress: 0, worldX: START_WORLD_X, name: myState.name }
                 });
             }
@@ -733,6 +757,7 @@
         statusEl.textContent = `Slyším: "${cleanText}"`;
 
         let matched = false;
+        // Do 10 kontrolujeme slovní mapu, nad 10 kontrolujeme číselný řetězec z přepisu řeči
         if (myState.currentNumber <= 10) {
             const validAnswers = languageMaps1To10[langB][myState.currentNumber];
             if (validAnswers && validAnswers.some(ans => cleanText.includes(ans))) matched = true;
@@ -842,7 +867,6 @@
         Object.keys(remotePlayers).forEach(k => list.push({ role: k, ...remotePlayers[k] }));
         list.sort((a,b) => a.role.localeCompare(b.role));
 
-        // Kamera dynamicky sleduje lokálního hráče
         let currentVisualX = myState.worldX;
         let cameraX = currentVisualX - 130; 
         if(cameraX < 0) cameraX = 0;
@@ -868,7 +892,8 @@
             }
         }
 
-        for(let i = 0; i < 11; i++) {
+        // Vykreslování překážek podle dynamické délky trati
+        for(let i = 0; i < stepsToFinish; i++) {
             let hurdleWorldX = START_WORLD_X + (i * STEP_X) + 55;
             let hurdleScreenX = hurdleWorldX - cameraX;
             if(hurdleScreenX >= -20 && hurdleScreenX <= canvas.width + 20) {
@@ -896,12 +921,10 @@
     function gameLoop() {
         draw();
         if (gameStarted) {
-            // Kontrola výhry/vyřazení probíhá plynule v každém snímku
             checkWinConditions();
 
             if (myState.lives > 0 && myState.state === 'running') {
                 
-                // Spustí mluvení POUZE pokud došlo ke změně cílového čísla a JSME v tlumočení
                 if (myState.currentNumber !== lastSpokenNumber && myState.currentNumber > 0) {
                     lastSpokenNumber = myState.currentNumber;
                     if (currentModeType === 'translation') {
@@ -912,7 +935,7 @@
                 if (currentModeType === 'translation') {
                     numberEl.textContent = "🔊 POSLOUCHEJ...";
                 } else {
-                    numberEl.textContent = myState.currentNumber; // Klasický mód pouze píše, neruší tě hlas robota
+                    numberEl.textContent = myState.currentNumber; 
                 }
             } else if (myState.state === 'tripping') {
                 numberEl.textContent = "💥 KICK! 💥";
