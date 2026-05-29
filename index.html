@@ -505,14 +505,14 @@
     // --- VYVÁŽENÉ A HRATELNÉ HRANICE TĚŽKÉHO AI BOTU ---
     function startSoloBotAI() {
         const diff = document.getElementById('difficulty-select').value;
-        let tickTime = 4200;
-        let jumpChance = 0.55;
+        let tickTime = 4500;
+        let jumpChance = 0.60;
         let tripChance = 0.15;
 
         if (diff === 'easy') {
-            tickTime = 5200; jumpChance = 0.35; tripChance = 0.35;
+            tickTime = 6000; jumpChance = 0.40; tripChance = 0.25;
         } else if (diff === 'hard') {
-            tickTime = 3000;    // Zpomaleno z 2.2s (Bota lze nyní čistým během porazit!)
+            tickTime = 4000;    // Zpomaleno z 2.2s (Bota lze nyní čistým během porazit!)
             jumpChance = 0.75;  // Úspěšnost snížena z 85% na 75%
             tripChance = 0.08;  // Zvýšena šance na drobnou lidskou chybu bota
         }
