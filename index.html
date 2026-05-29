@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hlasový Závod - Multiplayer</title>
+    <title>Hlasový Přetahovaný Závod</title>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
     <style>
@@ -22,16 +22,15 @@
             border-radius: 15px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
-        .menu-section {
+        .screen { display: none; }
+        .active { display: block; }
+
+        .menu-card {
             background: #f8f9fa;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 15px;
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 15px;
-            align-items: center;
+            padding: 25px;
+            border-radius: 12px;
+            margin: 15px 0;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
         }
         .hud-container {
             display: flex;
@@ -61,10 +60,11 @@
             display: block;
         }
         input, select, button {
-            padding: 10px;
-            font-size: 14px;
-            border-radius: 5px;
+            padding: 12px;
+            font-size: 15px;
+            border-radius: 6px;
             border: 1px solid #ccc;
+            margin: 5px;
         }
         button {
             background-color: #3498db;
@@ -72,20 +72,44 @@
             border: none;
             cursor: pointer;
             font-weight: bold;
+            transition: background 0.2s;
         }
         button:hover { background-color: #2980b9; }
-        #start-btn { background-color: #2ecc71; font-size: 18px; padding: 12px 30px; }
-        #start-btn:hover { background-color: #27ae60; }
+        .btn-success { background-color: #2ecc71; }
+        .btn-success:hover { background-color: #27ae60; }
+        .btn-large { font-size: 18px; padding: 15px 35px; }
+        
         #status { font-style: italic; color: #7f8c8d; min-height: 35px; margin: 10px 0; }
-        .room-info { font-weight: bold; color: #e67e22; font-size: 18px; margin-bottom: 10px; }
+        .room-info { font-weight: bold; color: #e67e22; font-size: 20px; }
+
+        /* Stylování výsledkové tabulky */
+        .stats-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        .stats-table th, .stats-table td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+        .stats-table th { background-color: #34495e; color: white; }
+        .winner-announcement { font-size: 28px; color: #2ecc71; font-weight: bold; margin: 15px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="menu-section">
+
+    <div id="screen-main" class="screen active">
+        <h2>Hlasový Závod: Přetahovaná</h2>
+        <div class="menu-card">
+            <p>Vyber si herní režim:</p>
+            <button id="mode-solo-btn" class="btn-large">Hrát sám (Proti AI)</button>
+            <button id="mode-online-btn" class="btn-large" style="background-color: #9b59b6;">Hrát online (Multiplayer)</button>
+        </div>
         <div>
-            <label>Jazyk: </label>
+            <label>Jazyk tréninku: </label>
             <select id="lang-select">
                 <option value="cs-CZ">Čeština</option>
                 <option value="en-US">English</option>
@@ -94,30 +118,64 @@
                 <option value="fi-FI">Suomi</option>
             </select>
         </div>
-        <button id="create-btn">Vytvořit hru</button>
-        <div>
-            <input type="text" id="room-input" placeholder="Kód hry (např. 1234)">
-            <button id="join-btn">Připojit se</button>
+    </div>
+
+    <div id="screen-lobby-select" class="screen">
+        <h2>Online Hra</h2>
+        <div class="menu-card">
+            <label>Počet hráčů v místnosti: </label>
+            <select id="player-count-select">
+                <option value="2">2 Hráči (Duel)</option>
+            </select>
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
+            <button id="create-room-btn" class="btn-success">Vytvořit novou hru</button>
+            <p>nebo se připoj ke stávající:</p>
+            <input type="text" id="room-code-input" placeholder="Zadej kód hry">
+            <button id="join-room-btn">Připojit se</button>
+        </div>
+        <button onclick="changeScreen('screen-main')">← Zpět do menu</button>
+    </div>
+
+    <div id="screen-game" class="screen">
+        <div id="room-id-display" class="room-info"></div>
+        <div class="hud-container">
+            <div id="my-hud">Ty: 0 bodů</div>
+            <div id="opp-hud">Soupeř: 0 bodů</div>
+        </div>
+
+        <div id="number-display">-</div>
+        <canvas id="game-canvas" width="600" height="300"></canvas>
+        <p id="status">Připrav se...</p>
+        <button id="start-match-btn" class="btn-success btn-large" style="display:none;">START ZÁVODU</button>
+    </div>
+
+    <div id="screen-victory" class="screen">
+        <div id="victory-title" class="winner-announcement">Vítěz!</div>
+        <h3>Přehled zápasu</h3>
+        <table class="stats-table">
+            <thead>
+                <tr>
+                    <th>Hráč</th>
+                    <th>Správná čísla</th>
+                    <th>Zbylo životů</th>
+                    <th>Stav</th>
+                </tr>
+            </thead>
+            <tbody id="stats-tbody">
+                </tbody>
+        </table>
+        
+        <div id="replay-section" style="margin-top: 25px; display: none;">
+            <p>Chcete hrát znovu?</p>
+            <button id="rematch-btn" class="btn-success btn-large">Ano, nová hra</button>
+            <button onclick="changeScreen('screen-main')" style="background-color: #7f8c8d;">Ne, do menu</button>
         </div>
     </div>
 
-    <div id="room-display" class="room-info"></div>
-
-    <div class="hud-container">
-        <div id="my-hud">Ty: 0 m (❤️❤️ Bakalář)</div>
-        <div id="opp-hud">Soupeř: Čeká se...</div>
-    </div>
-
-    <div id="number-display">-</div>
-    
-    <canvas id="game-canvas" width="600" height="300"></canvas>
-
-    <p id="status">Vytvoř hru nebo zadej kód soupeře.</p>
-    <button id="start-btn" style="display:none;">START ZÁVODU</button>
 </div>
 
 <script>
-    // --- INTEGRACE TVÉHO FIREBASE PROJEKTU ---
+    // --- FIREBASE KONFIGURACE ---
     const firebaseConfig = {
         apiKey: "AIzaSyADCqnyF13k2oHefln1rNBqvZm5_BnroPo",
         authDomain: "hlasovahra.firebaseapp.com",
@@ -129,18 +187,16 @@
         measurementId: "G-L3SHDVNWWW"
     };
     
-    // Inicializace připojení k databázi
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // --- HERNÍ PARAMETRY ---
+    // --- CONFIG TRATÍ ---
     const canvas = document.getElementById('game-canvas');
     const ctx = canvas.getContext('2d');
-    
-    const LANE1_Y = 110; // Výška tratě pro Hráče 1
-    const LANE2_Y = 250; // Výška tratě pro Hráče 2
-    const RUNNER_X = 80;
-    const HURDLE_X = 180; // Fixní pozice překážky před běžcem
+    const LANE1_Y = 110;
+    const LANE2_Y = 250;
+    const BASE_X = 220; // Výchozí středová pozice, odkud se hráči přetahují
+    const STEP_X = 85;   // Kolik pixelů dopředu skočí hráč za bod k dobru (4 * 85 = +340px -> konec obrazovky)
 
     const languageMaps1To10 = {
         'cs-CZ': { 1: ['1', 'jeden', 'jedna'], 2: ['2', 'dva'], 3: ['3', 'tři'], 4: ['4', 'čtyři'], 5: ['5', 'pět'], 6: ['6', 'šest'], 7: ['7', 'sedm'], 8: ['8', 'osm'], 9: ['9', 'devět'], 10: ['10', 'deset'] },
@@ -150,24 +206,25 @@
         'fi-FI': { 1: ['1', 'yksi'], 2: ['2', 'kaksi'], 3: ['3', 'kolme'], 4: ['4', 'neljä'], 5: ['5', 'viisi'], 6: ['6', 'kuusi'], 7: ['7', 'seitsemän'], 8: ['8', 'kahdeksan'], 9: ['9', 'yhdeksän'], 10: ['10', 'kymmenen'] }
     };
 
+    // --- STAV SYSTÉMU ---
+    let gameMode = 'solo'; // 'solo' nebo 'online'
     let roomRef = null;
-    let myRole = null; // 'p1' nebo 'p2'
-    let oppRole = null;
-    
-    let myState = { score: 0, lives: 3, currentNumber: 0, state: 'running', y: 0 };
-    let oppState = { score: 0, lives: 3, currentNumber: 0, state: 'running', y: 0 };
+    let myRole = 'p1'; 
+    let oppRole = 'p2';
+    let botInterval = null;
+
+    let myState = { score: 0, lives: 3, currentNumber: 0, state: 'running', y: LANE1_Y };
+    let oppState = { score: 0, lives: 3, currentNumber: 0, state: 'running', y: LANE2_Y };
     let gameStarted = false;
 
+    // DOM elementy plochy
     const statusEl = document.getElementById('status');
     const numberEl = document.getElementById('number-display');
-    const startBtn = document.getElementById('start-btn');
+    const startMatchBtn = document.getElementById('start-match-btn');
     const myHudEl = document.getElementById('my-hud');
     const oppHudEl = document.getElementById('opp-hud');
 
-    myState.y = LANE1_Y;
-    oppState.y = LANE2_Y;
-
-    // --- NASTAVENÍ HLASOVÉHO GOOGLE API ---
+    // --- HLASOVÉ API ---
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     let recognition = null;
     if (SpeechRecognition) {
@@ -175,11 +232,47 @@
         recognition.continuous = true;
         recognition.interimResults = false;
         recognition.onresult = (e) => handleVoice(e.results[e.results.length-1][0].transcript);
-        recognition.onend = () => { if (gameStarted && myState.lives > 0) recognition.start(); };
+        recognition.onend = () => { if (gameStarted && myState.lives > 0 && myState.state !== 'won') recognition.start(); };
     }
 
-    // --- MULTIPLAYER LOBBY MANAGEMENT ---
-    document.getElementById('create-btn').addEventListener('click', () => {
+    // --- MANAGEMENT OBRAZOVEK ---
+    function changeScreen(screenId) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(screenId).classList.add('active');
+        if(screenId !== 'screen-game') {
+            resetGameEngine();
+        }
+    }
+
+    function resetGameEngine() {
+        gameStarted = false;
+        if(recognition) try { recognition.stop(); } catch(e){}
+        if(botInterval) clearInterval(botInterval);
+        if(roomRef) roomRef.off();
+        myState = { score: 0, lives: 3, currentNumber: 0, state: 'running', y: LANE1_Y };
+        oppState = { score: 0, lives: 3, currentNumber: 0, state: 'running', y: LANE2_Y };
+        document.getElementById('replay-section').style.display = 'none';
+    }
+
+    // --- MENU INTERAKCE ---
+    document.getElementById('mode-solo-btn').addEventListener('click', () => {
+        gameMode = 'solo';
+        myRole = 'p1';
+        oppRole = 'bot';
+        changeScreen('screen-game');
+        document.getElementById('room-id-display').textContent = "Tréninkový závod (Sólo)";
+        startMatchBtn.style.display = 'inline-block';
+        statusEl.textContent = "Připraven. Klikni na start.";
+        updateHUDText();
+    });
+
+    document.getElementById('mode-online-btn').addEventListener('click', () => {
+        gameMode = 'online';
+        changeScreen('screen-lobby-select');
+    });
+
+    // Vytvoření online místnosti
+    document.getElementById('create-room-btn').addEventListener('click', () => {
         const code = Math.floor(1000 + Math.random() * 9000).toString();
         myRole = 'p1'; oppRole = 'p2';
         myState.y = LANE1_Y; oppState.y = LANE2_Y;
@@ -187,16 +280,19 @@
         roomRef = db.ref('rooms/' + code);
         roomRef.set({
             p1: { score: 0, lives: 3, state: 'running', y: LANE1_Y, currentNumber: 0 },
-            status: 'waiting'
+            status: 'waiting',
+            mode: 'online'
         });
         
-        document.getElementById('room-display').textContent = `Tvůj kód hry: ${code}`;
-        statusEl.textContent = "Nasdílej kód soupeři a počkej, až se připojí...";
+        changeScreen('screen-game');
+        document.getElementById('room-id-display').textContent = `Kód hry: ${code}`;
+        statusEl.textContent = "Čekání na soupeře...";
         listenToRoom();
     });
 
-    document.getElementById('join-btn').addEventListener('click', () => {
-        const code = document.getElementById('room-input').value.trim();
+    // Připojení do místnosti
+    document.getElementById('join-room-btn').addEventListener('click', () => {
+        const code = document.getElementById('room-code-input').value.trim();
         if(!code) return;
         myRole = 'p2'; oppRole = 'p1';
         myState.y = LANE2_Y; oppState.y = LANE1_Y;
@@ -204,38 +300,40 @@
         roomRef = db.ref('rooms/' + code);
         roomRef.once('value', (snap) => {
             if(!snap.exists()) {
-                statusEl.textContent = "Závod s tímto kódem nebyl nalezen!";
+                alert("Závod s tímto kódem neexistuje!");
             } else {
                 roomRef.update({
                     p2: { score: 0, lives: 3, state: 'running', y: LANE2_Y, currentNumber: 0 },
                     status: 'ready'
                 });
-                document.getElementById('room-display').textContent = `Připojen do hry: ${code}`;
+                changeScreen('screen-game');
+                document.getElementById('room-id-display').textContent = `Kód hry: ${code}`;
                 listenToRoom();
             }
         });
     });
 
+    // --- SYNCHRONIZACE LOBBY ---
     function listenToRoom() {
         roomRef.on('value', (snap) => {
             const data = snap.val();
             if(!data) return;
 
             if (data[oppRole]) oppState = data[oppRole];
-            if (data[myRole]) myState.currentNumber = data[myRole].currentNumber;
+            if (data[myRole] && gameStarted) {
+                // Převzít vygenerované číslo z databáze, pokud zrovna běžíme
+                myState.currentNumber = data[myRole].currentNumber;
+            }
 
-            // Aktualizace textových HUDů nad plátnem
-            let myHearts = "❤️".repeat(Math.max(0, myState.lives)) + "🖤".repeat(3 - Math.max(0, myState.lives));
-            let oppHearts = "❤️".repeat(Math.max(0, oppState.lives)) + "🖤".repeat(3 - Math.max(0, oppState.lives));
-            myHudEl.textContent = `Ty (${myRole.toUpperCase()}): ${myState.score} m (${myHearts})`;
-            oppHudEl.textContent = `Soupeř (${oppRole.toUpperCase()}): ${oppState.score} m (${oppHearts})`;
+            updateHUDText();
+            checkWinConditions();
 
             if (data.status === 'ready' && !gameStarted) {
                 if (myRole === 'p1') {
-                    startBtn.style.display = 'inline-block';
-                    statusEl.textContent = "Soupeř se připojil! Můžeš odstartovat závod.";
+                    startMatchBtn.style.display = 'inline-block';
+                    statusEl.textContent = "Soupeř připojen. Můžeš odstartovat!";
                 } else {
-                    statusEl.textContent = "Připojeno. Čekej, až zakladatel odstartuje závod...";
+                    statusEl.textContent = "Čekej, až zakladatel spustí závod...";
                 }
             }
             if (data.status === 'playing' && !gameStarted) {
@@ -244,10 +342,20 @@
         });
     }
 
-    startBtn.addEventListener('click', () => {
-        if (myRole === 'p1' && roomRef) {
+    function updateHUDText() {
+        let myHearts = "❤️".repeat(Math.max(0, myState.lives)) + "🖤".repeat(3 - Math.max(0, myState.lives));
+        let oppHearts = "❤️".repeat(Math.max(0, oppState.lives)) + "🖤".repeat(3 - Math.max(0, oppState.lives));
+        
+        myHudEl.textContent = `${myRole === 'p1' ? 'Hráč 1 (Ty)' : 'Hráč 2 (Ty)'}: ${myState.score} b. (${myHearts})`;
+        oppHudEl.textContent = `${oppRole === 'p2' ? 'Hráč 2 (Soupeř)' : 'Hráč 1 (Soupeř)'}: ${oppState.score} b. (${oppHearts})`;
+    }
+
+    // Spuštění zápasu (kliknutí na start)
+    startMatchBtn.addEventListener('click', () => {
+        if (gameMode === 'solo') {
+            executeStart();
+        } else if (myRole === 'p1' && roomRef) {
             roomRef.update({ status: 'playing' });
-            // Vygenerování prvotních unikátních čísel pro oba běžce
             roomRef.child('p1/currentNumber').set(Math.floor(Math.random() * 100) + 1);
             roomRef.child('p2/currentNumber').set(Math.floor(Math.random() * 100) + 1);
         }
@@ -255,8 +363,14 @@
 
     function executeStart() {
         gameStarted = true;
-        startBtn.style.display = 'none';
-        statusEl.textContent = "Běž! Vyslov správné číslo, abys přeskočil překážku.";
+        startMatchBtn.style.display = 'none';
+        statusEl.textContent = "Závod odstartován! Mluv!";
+        
+        if (gameMode === 'solo') {
+            myState.currentNumber = Math.floor(Math.random() * 10) + 1; // Pro začátek lehčí čísla 1-10
+            startSoloBot();
+        }
+
         if (recognition) {
             recognition.lang = document.getElementById('lang-select').value;
             recognition.start();
@@ -264,7 +378,132 @@
         requestAnimationFrame(gameLoop);
     }
 
-    // --- REAKCE NA HLAS ---
+    // --- SOLO BOT LOGIKA ---
+    function startSoloBot() {
+        botInterval = setInterval(() => {
+            if (!gameStarted || oppState.lives <= 0 || myState.state === 'won') return;
+            
+            // Bot každé 4 sekundy zkusí odpovědět s 60% úspěšností
+            if (Math.random() < 0.60) {
+                oppState.state = 'jumping';
+                let botYDefault = LANE2_Y;
+                let jH = 0; let dir = 1;
+                
+                let bJmp = setInterval(() => {
+                    jH += 6 * dir;
+                    oppState.y = botYDefault - jH;
+                    if(jH >= 80) dir = -1;
+                    if(jH <= 0 && dir === -1) {
+                        clearInterval(bJmp);
+                        oppState.state = 'running';
+                        oppState.y = botYDefault;
+                        oppState.score++;
+                        checkWinConditions();
+                    }
+                }, 20);
+            } else {
+                // Bot občas zakopne
+                if(Math.random() < 0.3) {
+                    oppState.state = 'tripping';
+                    oppState.lives--;
+                    checkWinConditions();
+                    setTimeout(() => { if(oppState.lives > 0) oppState.state = 'running'; }, 1200);
+                }
+            }
+        }, 4000);
+    }
+
+    // --- VYHODNOCENÍ VÍTĚZSTVÍ ---
+    function checkWinConditions() {
+        if (!gameStarted) return;
+
+        let winner = null;
+
+        // Vítězství na základě bodového rozdílu o 4 čísla
+        if (myState.score - oppState.score >= 4) winner = myRole;
+        else if (oppState.score - myState.score >= 4) winner = oppRole;
+        
+        // Vítězství, pokud sok ztratí všechny životy
+        if (myState.lives <= 0) winner = oppRole;
+        if (oppState.lives <= 0) winner = myRole;
+
+        if (winner) {
+            gameStarted = false;
+            if(roomRef) roomRef.child('status').set('finished');
+            showVictoryScreen(winner);
+        }
+    }
+
+    function showVictoryScreen(winnerRole) {
+        if(botInterval) clearInterval(botInterval);
+        if(recognition) try { recognition.stop(); } catch(e){}
+
+        const titleEl = document.getElementById('victory-title');
+        const tbody = document.getElementById('stats-tbody');
+        tbody.innerHTML = "";
+
+        if (winnerRole === myRole) {
+            titleEl.textContent = "🎉 Vyhrál jsi závod! 🎉";
+            titleEl.style.color = "#2ecc71";
+        } else {
+            titleEl.textContent = "💀 Prohrál jsi! Soupeř tě udolal. 💀";
+            titleEl.style.color = "#e74c3c";
+        }
+
+        // Sestavení výsledkové tabulky
+        let playersToRender = [];
+        if (gameMode === 'solo') {
+            playersToRender = [
+                { name: "Ty (Hráč 1)", score: myState.score, lives: myState.lives, status: winnerRole === 'p1' ? "VÍTĚZ" : "PORAŽEN" },
+                { name: "Počítač (AI)", score: oppState.score, lives: oppState.lives, status: winnerRole === 'bot' ? "VÍTĚZ" : "PORAŽEN" }
+            ];
+        } else {
+            playersToRender = [
+                { name: "Hráč 1 " + (myRole === 'p1' ? "(Ty)" : ""), score: (myRole === 'p1' ? myState.score : oppState.score), lives: (myRole === 'p1' ? myState.lives : oppState.lives), status: winnerRole === 'p1' ? "VÍTĚZ" : "PORAŽEN" },
+                { name: "Hráč 2 " + (myRole === 'p2' ? "(Ty)" : ""), score: (myRole === 'p2' ? myState.score : oppState.score), lives: (myRole === 'p2' ? myState.lives : oppState.lives), status: winnerRole === 'p2' ? "VÍTĚZ" : "PORAŽEN" }
+            ];
+        }
+
+        playersToRender.forEach(p => {
+            let tr = document.createElement('tr');
+            tr.innerHTML = `<td><b>${p.name}</b></td><td>${p.score}</td><td>${p.lives}/3</td><td>${p.status}</td>`;
+            tbody.appendChild(tr);
+        });
+
+        changeScreen('screen-victory');
+
+        // Otázka chci hrát znovu se ukáže s mírným zpožděním (1.5s)
+        setTimeout(() => {
+            document.getElementById('replay-section').style.display = 'block';
+        }, 1500);
+    }
+
+    // Reakce na stisknutí "Chci hrát znovu"
+    document.getElementById('rematch-btn').addEventListener('click', () => {
+        if (gameMode === 'solo') {
+            resetGameEngine();
+            changeScreen('screen-game');
+            startMatchBtn.style.display = 'inline-block';
+            statusEl.textContent = "Nový trénink připraven.";
+            updateHUDText();
+        } else {
+            // V online režimu vyčistíme místnost na Firebase pro nový start
+            resetGameEngine();
+            if (roomRef) {
+                if (myRole === 'p1') {
+                    roomRef.set({
+                        p1: { score: 0, lives: 3, state: 'running', y: LANE1_Y, currentNumber: 0 },
+                        status: 'ready',
+                        mode: 'online'
+                    });
+                }
+                changeScreen('screen-game');
+                listenToRoom();
+            }
+        }
+    });
+
+    // --- HLASOVÁ DETEKCE ---
     function handleVoice(rawText) {
         if (!gameStarted || myState.state !== 'running' || myState.lives <= 0) return;
 
@@ -292,8 +531,7 @@
         myState.state = 'jumping';
         sendStateToFirebase();
 
-        let jumpHeight = 0;
-        let direction = 1;
+        let jumpHeight = 0; let direction = 1;
         const defaultY = (myRole === 'p1') ? LANE1_Y : LANE2_Y;
 
         const jumpInterval = setInterval(() => {
@@ -306,9 +544,10 @@
                 clearInterval(jumpInterval);
                 myState.state = 'running';
                 myState.y = defaultY;
-                myState.score += 10; // Přeskočení překážky tě posune o 10 metrů dál!
-                myState.currentNumber = Math.floor(Math.random() * 100) + 1;
+                myState.score++; // Správné číslo = +1 bod
+                myState.currentNumber = Math.floor(Math.random() * 50) + 1; // Další náhodné číslo
                 sendStateToFirebase();
+                checkWinConditions();
             }
         }, 20);
     }
@@ -317,21 +556,19 @@
         myState.state = 'tripping';
         myState.lives--;
         sendStateToFirebase();
+        checkWinConditions();
 
         setTimeout(() => {
-            if (myState.lives <= 0) {
-                myState.state = 'gameover';
-                statusEl.textContent = "Konec závodu! Tvoje životy vypršely.";
-            } else {
+            if (myState.lives > 0 && gameStarted) {
                 myState.state = 'running';
-                myState.currentNumber = Math.floor(Math.random() * 100) + 1;
+                myState.currentNumber = Math.floor(Math.random() * 50) + 1;
+                sendStateToFirebase();
             }
-            sendStateToFirebase();
-        }, 1200); // Ochraná penalizace na zemi
+        }, 1200);
     }
 
     function sendStateToFirebase() {
-        if (roomRef) {
+        if (gameMode === 'online' && roomRef) {
             roomRef.child(myRole).update({
                 score: myState.score,
                 lives: myState.lives,
@@ -342,49 +579,76 @@
         }
     }
 
-    // --- VYMALOVÁNÍ GRAFIKY ZÁVODU ---
+    // --- DYNAMICKÉ VYKRESLOVÁNÍ POLOHY (RENDER ENGINE) ---
     function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // --- TRAŤ 1 (Horní - Hráč 1) ---
+        let p1_score = (myRole === 'p1') ? myState.score : oppState.score;
+        let p2_score = (myRole === 'p2') ? myState.score : oppState.score;
+
+        // Výpočet dynamických X souřadnic (přetahovaná)
+        // Když p1_score - p2_score == 4, p1 dosáhne pravého okraje (BASE_X + 4 * STEP_X = 220 + 340 = 560px)
+        let p1_X = BASE_X + (p1_score - p2_score) * STEP_X;
+        let p2_X = BASE_X + (p2_score - p1_score) * STEP_X;
+
+        // Omezení, aby běžci nevyběhli úplně mimo levý okraj plátna
+        p1_X = Math.max(30, Math.min(560, p1_X));
+        p2_X = Math.max(30, Math.min(560, p2_X));
+
+        // Pozice překážek se dynamicky generuje těsně před aktuálním běžcem!
+        let p1_hurdle_X = p1_X + 50;
+        let p2_hurdle_X = p2_X + 50;
+
+        // --- DRÁHA 1 (Hráč 1) ---
         ctx.fillStyle = "#8d6e63"; ctx.fillRect(0, LANE1_Y, canvas.width, 40); 
         ctx.fillStyle = "#f1c40f"; ctx.fillRect(0, LANE1_Y - 5, canvas.width, 10); 
-        ctx.fillStyle = "#2c3e50"; ctx.fillRect(HURDLE_X, LANE1_Y - 30, 15, 30); // Pevná překážka
-        
-        ctx.fillStyle = (oppState.state === 'tripping' && myRole === 'p2') || (myState.state === 'tripping' && myRole === 'p1') ? "#c0392b" : "#3498db";
+        // Překážka pro Hráče 1 se kreslí jen, pokud nedorazil na úplný konec obrazovky
+        if(p1_X < 550) {
+            ctx.fillStyle = "#2c3e50"; ctx.fillRect(p1_hurdle_X, LANE1_Y - 25, 12, 25);
+        }
+        // Vykreslení postavy Hráče 1
+        ctx.fillStyle = (myRole === 'p1' && myState.state === 'tripping') || (myRole === 'p2' && oppState.state === 'tripping') ? "#c0392b" : "#3498db";
         let p1_Y = (myRole === 'p1') ? myState.y : oppState.y;
-        ctx.fillRect(RUNNER_X, p1_Y - 40, 30, 40);
+        ctx.fillRect(p1_X, p1_Y - 40, 25, 40);
 
-        // --- TRAŤ 2 (Dolní - Hráč 2) ---
+        // --- DRÁHA 2 (Hráč 2 / Bot) ---
         ctx.fillStyle = "#70544c"; ctx.fillRect(0, LANE2_Y, canvas.width, 40);
         ctx.fillStyle = "#f39c12"; ctx.fillRect(0, LANE2_Y - 5, canvas.width, 10);
-        ctx.fillStyle = "#2c3e50"; ctx.fillRect(HURDLE_X, LANE2_Y - 30, 15, 30); // Pevná překážka
-        
-        ctx.fillStyle = (oppState.state === 'tripping' && myRole === 'p1') || (myState.state === 'tripping' && myRole === 'p2') ? "#c0392b" : "#2ecc71";
+        // Překážka pro Hráče 2
+        if(p2_X < 550) {
+            ctx.fillStyle = "#2c3e50"; ctx.fillRect(p2_hurdle_X, LANE2_Y - 25, 12, 25);
+        }
+        // Vykreslení postavy Hráče 2
+        ctx.fillStyle = (myRole === 'p2' && myState.state === 'tripping') || (myRole === 'p1' && oppState.state === 'tripping') ? "#c0392b" : "#2ecc71";
         let p2_Y = (myRole === 'p2') ? myState.y : oppState.y;
-        ctx.fillRect(RUNNER_X, p2_Y - 40, 30, 40);
+        ctx.fillRect(p2_X, p2_Y - 40, 25, 40);
 
-        // Popisky drah
-        ctx.fillStyle = "white"; ctx.font = "bold 13px sans-serif";
-        ctx.fillText("Hráč 1 (P1)", 15, LANE1_Y + 25);
-        ctx.fillText("Hráč 2 (P2)", 15, LANE2_Y + 25);
+        // Popisy drah na zemi
+        ctx.fillStyle = "white"; ctx.font = "bold 12px sans-serif";
+        ctx.fillText("Hráč 1 (Modrý)", 15, LANE1_Y + 25);
+        ctx.fillText(gameMode === 'solo' ? "Počítač (Zelený)" : "Hráč 2 (Zelený)", 15, LANE2_Y + 25);
+
+        // Cílové čáry na úplném konci obrazovky (X = 550)
+        ctx.fillStyle = "rgba(255,255,255,0.4)";
+        ctx.fillRect(550, LANE1_Y - 40, 8, 40);
+        ctx.fillRect(550, LANE2_Y - 40, 8, 40);
     }
 
     function gameLoop() {
         draw();
-        
-        // Zobrazování aktuálního stavu na velkém displeji
-        if (myState.lives > 0 && myState.state === 'running') {
-            numberEl.textContent = myState.currentNumber;
-        } else if (myState.state === 'tripping') {
-            numberEl.textContent = "💥";
-        } else if (myState.lives <= 0) {
-            numberEl.textContent = "KO";
+        if (gameStarted) {
+            if (myState.lives > 0 && myState.state === 'running') {
+                numberEl.textContent = myState.currentNumber;
+            } else if (myState.state === 'tripping') {
+                numberEl.textContent = "💥";
+            } else if (myState.lives <= 0) {
+                numberEl.textContent = "KO";
+            }
+            requestAnimationFrame(gameLoop);
         }
-        requestAnimationFrame(gameLoop);
     }
 
-    // Vykreslení základní scény před startem
+    // Prvotní překreslení prázdné trati
     draw();
 </script>
 </body>
