@@ -8,7 +8,7 @@
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             text-align: center;
-            background-color: #e0f7fa; /* Světle modrá obloha */
+            background-color: #e0f7fa;
             color: #333;
             margin: 0;
             padding: 20px;
@@ -33,8 +33,6 @@
             border: 1px solid #ccc;
             cursor: pointer;
         }
-        
-        /* Styl pro herní HUD (Score, Životy, Číslo) */
         #hud {
             display: flex;
             justify-content: space-between;
@@ -45,8 +43,6 @@
         }
         #score { color: #2ecc71; }
         #lives { color: #e74c3c; }
-        
-        /* Velké zobrazení čísla, které se má říct */
         #number-display {
             font-size: 72px;
             font-weight: bold;
@@ -56,18 +52,15 @@
             border-radius: 10px;
             padding: 10px;
         }
-
-        /* Herní plocha (Canvas) */
         #game-canvas {
             width: 100%;
             height: 200px;
-            background-color: #f1c40f; /* Žlutá trať */
+            background-color: #f1c40f;
             border: 4px solid #d35400;
             border-radius: 10px;
             display: block;
             margin: 0 auto;
         }
-
         #status {
             font-style: italic;
             color: #7f8c8d;
@@ -77,7 +70,7 @@
         button#start-btn {
             padding: 15px 35px;
             font-size: 20px;
-            background-color: #d35400; /* Oranžová závodní */
+            background-color: #d35400;
             color: white;
             border: none;
             border-radius: 5px;
@@ -86,21 +79,6 @@
             text-transform: uppercase;
         }
         button#start-btn:hover { background-color: #a04000; }
-        
-        /* Diagnostické okno (necháme skryté, dokud nebude potřeba) */
-        #debug-console {
-            margin-top: 20px;
-            padding: 10px;
-            background: #222;
-            color: #00ff00;
-            font-family: monospace;
-            text-align: left;
-            font-size: 11px;
-            max-height: 100px;
-            overflow-y: auto;
-            border-radius: 5px;
-            display: none; /* Změň na 'block' pro ladění */
-        }
     </style>
 </head>
 <body>
@@ -123,25 +101,19 @@
     </div>
 
     <div id="number-display">-</div>
-    
     <canvas id="game-canvas" width="500" height="200"></canvas>
-
     <p id="status">Vyber jazyk a klikni na START!</p>
     <button id="start-btn">Start Závodu</button>
-
-    <div id="debug-console">Debug Log:<br></div>
 </div>
 
 <script>
-    // --- Nastavení Hry ---
     const GAME_WIDTH = 500;
     const GAME_HEIGHT = 200;
-    const GROUND_Y = 160; // Výška země na canvasu
-    const RUNNER_X = 50;   // Pozice běžce na ose X
-    const JUMP_HEIGHT = 80; // Jak vysoko vyskočí
-    const OBSTACLE_SPEED = 3; // Rychlost přibližování překážky
+    const GROUND_Y = 160;
+    const RUNNER_X = 50;
+    const JUMP_HEIGHT = 80;
+    const OBSTACLE_SPEED = 3;
 
-    // --- Slovníky pro čísla 1-10 (ponecháme pro cvičení základů) ---
     const languageMaps1To10 = {
         'cs-CZ': { 1: ['1', 'jeden', 'jedna'], 2: ['2', 'dva'], 3: ['3', 'tři'], 4: ['4', 'čtyři'], 5: ['5', 'pět'], 6: ['6', 'šest'], 7: ['7', 'sedm'], 8: ['8', 'osm'], 9: ['9', 'devět'], 10: ['10', 'deset'] },
         'en-US': { 1: ['1', 'one'], 2: ['2', 'two'], 3: ['3', 'three'], 4: ['4', 'four'], 5: ['5', 'five'], 6: ['6', 'six'], 7: ['7', 'seven'], 8: ['8', 'eight'], 9: ['9', 'nine'], 10: ['10', 'ten'] },
@@ -150,7 +122,6 @@
         'fi-FI': { 1: ['1', 'yksi'], 2: ['2', 'kaksi'], 3: ['3', 'kolme'], 4: ['4', 'neljä'], 5: ['5', 'viisi'], 6: ['6', 'kuusi'], 7: ['7', 'seitsemän'], 8: ['8', 'kahdeksan'], 9: ['9', 'yhdeksän'], 10: ['10', 'kymmenen'] }
     };
 
-    // --- Elementy ---
     const scoreEl = document.getElementById('score');
     const livesEl = document.getElementById('lives');
     const numberEl = document.getElementById('number-display');
@@ -159,132 +130,192 @@
     const langSelect = document.getElementById('lang-select');
     const canvas = document.getElementById('game-canvas');
     const ctx = canvas.getContext('2d');
-    const debugConsole = document.getElementById('debug-console');
 
-    // --- Stavové Proměnné Hry ---
     let gameState = {
         score: 0,
         lives: 3,
         currentNumber: 0,
         active: false,
-        runnerState: 'running', // 'running', 'jumping', 'tripping'
+        runnerState: 'running', 
         runnerY: GROUND_Y,
-        obstacleX: GAME_WIDTH, // Překážka začíná mimo obrazovku
+        obstacleX: GAME_WIDTH,
     };
 
-    function log(message) {
-        debugConsole.innerHTML += "> " + message + "<br>";
-        debugConsole.scrollTop = debugConsole.scrollHeight;
+    let recognition = null;
+
+    // Bezpečný pokus o inicializaci Speech API
+    try {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = false;
+            
+            recognition.onresult = (e) => handleVoiceInput(e.results[e.results.length-1][0].transcript);
+            recognition.onend = () => { if (gameState.active && recognition) recognition.start(); };
+            recognition.onerror = (e) => { console.error("Hlas chyba API:", e.error); };
+        } else {
+            statusEl.textContent = "Upozornění: Prohlížeč nepodporuje hlas. Hra pojede v demo režimu.";
+        }
+    } catch(err) {
+        console.error("Nepodařilo se spustit SpeechRecognition:", err);
+        statusEl.textContent = "Chyba mikrofonu. Hra pojede v demo režimu (automatický skok za 4s).";
     }
 
-    // --- Kontrola Speech API ---
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-        statusEl.textContent = "CHYBA: Použij Google Chrome!";
-        startBtn.disabled = true;
-    } else {
-        const recognition = new SpeechRecognition();
-        recognition.continuous = true;
-        recognition.interimResults = false;
+    function generateNewNumber() {
+        gameState.currentNumber = Math.floor(Math.random() * 100) + 1;
+        numberEl.textContent = gameState.currentNumber;
+        gameState.obstacleX = GAME_WIDTH;
+    }
 
-        // --- Logika Hry a Hlasu ---
+    function updateHUD() {
+        scoreEl.textContent = "Skóre: " + gameState.score;
+        let hearts = "";
+        for (let i = 0; i < gameState.lives; i++) hearts += "❤️";
+        for (let i = gameState.lives; i < 3; i++) hearts += "🖤";
+        livesEl.textContent = "Životy: " + hearts;
+    }
 
-        function generateNewNumber() {
-            gameState.currentNumber = Math.floor(Math.random() * 100) + 1;
-            numberEl.textContent = gameState.currentNumber;
-            log("Nové číslo: " + gameState.currentNumber);
-            gameState.obstacleX = GAME_WIDTH; // Reset pozice překážky
-        }
-
-        function updateHUD() {
-            scoreEl.textContent = "Skóre: " + gameState.score;
-            let hearts = "";
-            for (let i = 0; i < gameState.lives; i++) hearts += "❤️";
-            for (let i = gameState.lives; i < 3; i++) hearts += "🖤"; // Ztracené životy
-            livesEl.textContent = "Životy: " + hearts;
-        }
-
-        function triggerJump() {
-            gameState.runnerState = 'jumping';
-            // Jednoduchá animace skoku (nahoru a dolů)
-            let jumpHeight = 0;
-            let direction = 1;
-            const jumpInterval = setInterval(() => {
-                jumpHeight += 5 * direction;
-                gameState.runnerY = GROUND_Y - jumpHeight;
-                if (jumpHeight >= JUMP_HEIGHT) direction = -1;
-                if (jumpHeight <= 0 && direction === -1) {
-                    clearInterval(jumpInterval);
-                    gameState.runnerState = 'running';
-                    gameState.runnerY = GROUND_Y;
-                    gameState.score++;
-                    updateHUD();
-                    generateNewNumber();
-                }
-            }, 20);
-        }
-
-        function triggerTrip() {
-            gameState.runnerState = 'tripping';
-            gameState.lives--;
-            updateHUD();
-            log("Špatně! Životy: " + gameState.lives);
-            
-            // Animace zakopnutí (změna barvy, chvíli stojí)
-            setTimeout(() => {
-                if (gameState.lives <= 0) {
-                    endGame();
-                } else {
-                    gameState.runnerState = 'running';
-                    generateNewNumber();
-                }
-            }, 1000); // 1 vteřina penalizace
-        }
-
-        function handleVoiceInput(rawText) {
-            if (!gameState.active || gameState.runnerState !== 'running') return;
-
-            const cleanText = rawText.toLowerCase().replace(/[.,?!]/g, '').trim();
-            statusEl.textContent = `Slyšel jsem: "${cleanText}"`;
-            log(`Hlas input: '${cleanText}'`);
-
-            const currentLang = langSelect.value;
-            let matched = false;
-
-            // Logika kontroly odpovědi
-            if (gameState.currentNumber <= 10) {
-                // Použijeme slovník 1-10
-                const validAnswers = languageMaps1To10[currentLang][gameState.currentNumber];
-                log("Očekávám slovně pro 1-10: [" + validAnswers.join(", ") + "]");
-                if (validAnswers.includes(cleanText)) matched = true;
-            } else {
-                // Pro čísla >10 očekáváme číslici (Google Chrome ji obvykle vrátí)
-                log("Očekávám číslici pro >10: '" + gameState.currentNumber + "'");
-                if (cleanText === gameState.currentNumber.toString()) matched = true;
+    function triggerJump() {
+        if (gameState.runnerState !== 'running') return;
+        gameState.runnerState = 'jumping';
+        let jumpHeight = 0;
+        let direction = 1;
+        const jumpInterval = setInterval(() => {
+            jumpHeight += 5 * direction;
+            gameState.runnerY = GROUND_Y - jumpHeight;
+            if (jumpHeight >= JUMP_HEIGHT) direction = -1;
+            if (jumpHeight <= 0 && direction === -1) {
+                clearInterval(jumpInterval);
+                gameState.runnerState = 'running';
+                gameState.runnerY = GROUND_Y;
+                gameState.score++;
+                updateHUD();
+                generateNewNumber();
             }
+        }, 20);
+    }
 
-            // Spustíme odpovídající akci
-            if (matched) {
-                triggerJump();
+    function triggerTrip() {
+        if (gameState.runnerState !== 'running') return;
+        gameState.runnerState = 'tripping';
+        gameState.lives--;
+        updateHUD();
+        
+        setTimeout(() => {
+            if (gameState.lives <= 0) {
+                endGame();
             } else {
+                gameState.runnerState = 'running';
+                generateNewNumber();
+            }
+        }, 1000);
+    }
+
+    function handleVoiceInput(rawText) {
+        if (!gameState.active || gameState.runnerState !== 'running') return;
+
+        const cleanText = rawText.toLowerCase().replace(/[.,?!]/g, '').trim();
+        statusEl.textContent = `Slyšel jsem: "${cleanText}"`;
+
+        const currentLang = langSelect.value;
+        let matched = false;
+
+        if (gameState.currentNumber <= 10) {
+            const validAnswers = languageMaps1To10[currentLang][gameState.currentNumber];
+            if (validAnswers.includes(cleanText)) matched = true;
+        } else {
+            if (cleanText === gameState.currentNumber.toString()) matched = true;
+        }
+
+        if (matched) {
+            triggerJump();
+        } else {
+            triggerTrip();
+        }
+    }
+
+    function startGame() {
+        gameState = { score: 0, lives: 3, currentNumber: 0, active: true, runnerState: 'running', runnerY: GROUND_Y, obstacleX: GAME_WIDTH };
+        updateHUD();
+        startBtn.style.display = 'none';
+        generateNewNumber();
+        
+        if (recognition) {
+            try {
+                recognition.lang = langSelect.value;
+                recognition.start();
+                statusEl.textContent = "Závod začíná! Poslouchám...";
+            } catch(e) {
+                statusEl.textContent = "Mikrofon nešlo spustit. Hrajeme v demo režimu (stiskni MEZERNÍK pro skok).";
+            }
+        } else {
+            statusEl.textContent = "Demo režim: Pro skok stiskni MEZERNÍK.";
+        }
+        
+        requestAnimationFrame(gameLoop);
+    }
+
+    function endGame() {
+        gameState.active = false;
+        if (recognition) { try { recognition.stop(); } catch(e){} }
+        statusEl.textContent = `KONEC ZÁVODU! Dosáhl jsi skóre ${gameState.score}.`;
+        startBtn.textContent = "Hrát znovu";
+        startBtn.style.display = 'inline-block';
+        numberEl.textContent = "KO";
+        drawGame();
+    }
+
+    // Ovládání klávesnicí jako záloha (pro testování nebo demo)
+    window.addEventListener('keydown', (e) => {
+        if (e.code === 'Space' && gameState.active) {
+            e.preventDefault();
+            triggerJump();
+        }
+    });
+
+    startBtn.addEventListener('click', startGame);
+
+    // --- Vykreslování ---
+    function drawGame() {
+        ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+
+        // Hlína
+        ctx.fillStyle = "#8d6e63";
+        ctx.fillRect(0, GROUND_Y, GAME_WIDTH, GAME_HEIGHT - GROUND_Y);
+        
+        // Trať
+        ctx.fillStyle = "#f1c40f";
+        ctx.fillRect(0, GROUND_Y - 5, GAME_WIDTH, 10);
+
+        // Běžec (Panáček)
+        ctx.fillStyle = (gameState.runnerState === 'tripping') ? "#c0392b" : "#3498db";
+        ctx.fillRect(RUNNER_X, gameState.runnerY - 40, 30, 40); 
+
+        // Překážka
+        if (gameState.active && gameState.runnerState === 'running') {
+            ctx.fillStyle = "#2c3e50";
+            ctx.fillRect(gameState.obstacleX, GROUND_Y - 30, 20, 30);
+        }
+    }
+
+    function gameLoop() {
+        if (!gameState.active) return;
+
+        if (gameState.runnerState === 'running') {
+            gameState.obstacleX -= OBSTACLE_SPEED;
+            if (gameState.obstacleX < RUNNER_X + 25 && gameState.obstacleX > RUNNER_X) {
                 triggerTrip();
             }
         }
+        
+        drawGame();
+        requestAnimationFrame(gameLoop);
+    }
 
-        function startGame() {
-            gameState = { score: 0, lives: 3, currentNumber: 0, active: true, runnerState: 'running', runnerY: GROUND_Y, obstacleX: GAME_WIDTH };
-            updateHUD();
-            startBtn.style.display = 'none';
-            generateNewNumber();
-            recognition.lang = langSelect.value;
-            recognition.start();
-            statusEl.textContent = "Závod začíná! Poslouchám...";
-            requestAnimationFrame(gameLoop); // Spustí vykreslování
-        }
+    // Vykreslit panáčka hned na začátku, aby plocha nebyla prázdná
+    drawGame();
+</script>
 
-        function endGame() {
-            gameState.active = false;
-            recognition.stop();
-            statusEl.textContent = `KONEC ZÁVODU! Dosáhl jsi skóre ${gameState.score}.`;
-            startBtn.textContent = "Hrát znovu";
-            startBtn.style.display = 'inline-block';
+</body>
+</html>
