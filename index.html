@@ -6,6 +6,7 @@
     <title>Hlasový Přetahovaný Závod - Vyřazovací edice</title>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -145,7 +146,37 @@
     </style>
 </head>
 <body>
+<div class="container">
+    <!-- SELEKTOR JAZYKA (zůstává v rohu) -->
+    <div class="lang-selector">...</div>
 
+    <!-- NOVÁ OBRAZOVKA: GLOBÁLNÍ HUB & PŘIHLÁŠENÍ -->
+    <div id="screen-global-hub" class="screen active">
+        <h2>🎮 Herní Portál</h2>
+        
+        <!-- Autentizační Box -->
+        <div class="menu-card" id="auth-box">
+            <div id="auth-logged-out">
+                <p>Nejste přihlášeni. Zbývá her na dnes: <b id="free-games-count">3</b></p>
+                <button onclick="loginWithGoogle()" class="btn-success">🔑 Přihlásit se přes Google</button>
+            </div>
+            <div id="auth-logged-in" style="display: none;">
+                <p>Vítej, <b id="user-display-name">Hráči</b>! (Premium účet - bez limitu her)</p>
+                <button onclick="logout()" class="btn-secondary">Odhlásit se</button>
+            </div>
+        </div>
+
+        <!-- Výběr her -->
+        <h3>Vyber si hru:</h3>
+        <div style="display: flex; flex-direction: column; gap: 15px; align-items: center;">
+            <button onclick="selectGame('voice-race')" class="btn-large" style="background-color: #3498db; width: 80%;">
+                🚀 1. Hlasový Přetahovaný Závod
+            </button>
+            <button class="btn-large btn-secondary" style="width: 80%; cursor: not-allowed;" disabled>
+                🔒 2. Další super hra (Již brzy...)
+            </button>
+        </div>
+    </div>
 <div class="container">
 
     <div class="lang-selector">
@@ -314,13 +345,86 @@
         <div id="replay-section" style="margin-top: 25px; display: none;">
             <p id="lbl-replay">Chceš hrát znovu?</p>
             <button id="rematch-btn" class="btn-success btn-large">Ano, nová hra</button>
-            <button id="btn-to-menu" onclick="changeScreen('screen-main')" class="btn-secondary">Ne, do hlavního menu</button>
+            <button id="btn-to-menu" onclick="changeScreen('screen-global-hub')" class="btn-secondary">Ne, do hlavního menu</button>
         </div>
     </div>
 
 </div>
 
 <script>
+    // --- KOORDINACE AUTENTIZACE A LIMITŮ ---
+const provider = new firebase.auth.GoogleAuthProvider();
+let currentUser = null;
+
+// Sleduje stav přihlášení uživatele
+firebase.auth().onAuthStateChanged((user) => {
+    currentUser = user;
+    const loggedOutDiv = document.getElementById('auth-logged-out');
+    const loggedInDiv = document.getElementById('auth-logged-in');
+    
+    if (user) {
+        loggedOutDiv.style.display = 'none';
+        loggedInDiv.style.display = 'block';
+        document.getElementById('user-display-name').textContent = user.displayName;
+        document.getElementById('player-name-input').value = user.displayName.substring(0, 12);
+    } else {
+        loggedOutDiv.style.display = 'block';
+        loggedInDiv.style.display = 'none';
+        updateFreeGamesUI();
+    }
+});
+
+function loginWithGoogle() {
+    firebase.auth().signInWithPopup(provider).catch(err => console.error(err));
+}
+
+function logout() {
+    firebase.auth().signOut();
+}
+
+// --- LOGIKA DENNÍHO LIMITU (3 HRY ZA DEN) ---
+function getLimitData() {
+    const today = new Date().toISOString().split('T')[0]; // Formát YYYY-MM-DD
+    let data = JSON.parse(localStorage.getItem('game_hub_limit'));
+    
+    // Pokud data neexistují nebo jsou ze starého dne, resetujeme počítadlo
+    if (!data || data.date !== today) {
+        data = { date: today, count: 0 };
+    }
+    return data;
+}
+
+function updateFreeGamesUI() {
+    if (currentUser) return;
+    const data = getLimitData();
+    const remaining = Math.max(0, 3 - data.count);
+    document.getElementById('free-games-count').textContent = remaining;
+}
+
+function checkAndConsumeGameCredit() {
+    // Přihlášený uživatel má neomezené hraní
+    if (currentUser) return true;
+
+    const data = getLimitData();
+    if (data.count >= 3) {
+        alert("🚨 Dosáhl jsi denního limitu 3 her! Pro neomezené hraní se bezplatně přihlas přes Google.");
+        return false;
+    }
+
+    // Započítání hry
+    data.count++;
+    localStorage.setItem('game_hub_limit', JSON.stringify(data));
+    updateFreeGamesUI();
+    return true;
+}
+
+// --- NAVIGACE MEZI HERAMI ---
+function selectGame(gameId) {
+    if (gameId === 'voice-race') {
+        // Přepne z globálního hubu do hlavního menu první hry
+        changeScreen('screen-main');
+    }
+}
     // --- INTEGRACE FIREBASE PROJEKTU ---
     const firebaseConfig = {
         apiKey: "AIzaSyADCqnyF13k2oHefln1rNBqvZm5_BnroPo",
@@ -807,10 +911,16 @@
         return Math.floor(Math.random() * 100) + 1;
     }
 
-    function executeStart() {
-        gameStarted = true;
-        startMatchBtn.style.display = 'none';
-        statusEl.textContent = uiTexts[currentUILang].statusGo;
+function executeStart() {
+    // KONTROLA KREDITU PŘED STARTEM
+    if (!checkAndConsumeGameCredit()) {
+        changeScreen('screen-global-hub'); // Návrat do hubu, pokud nemá kredit
+        return;
+    }
+
+    gameStarted = true;
+    startMatchBtn.style.display = 'none';
+    statusEl.textContent = uiTexts[currentUILang].statusGo;
         
         if (currentModeType === 'translation') {
             repeatBtn.style.display = 'inline-block';
