@@ -448,18 +448,18 @@
     // --- BALANCOVANÝ AI BOT (UŽ JE PORAZITELNÝ) ---
     function startSoloBotAI() {
         const diff = document.getElementById('difficulty-select').value;
-        let tickTime = 4200;
-        let jumpChance = 0.55;
-        let tripChance = 0.15;
+        let tickTime = 4500;
+        let jumpChance = 0.60;
+        let tripChance = 0.18;
 
         if (diff === 'easy') {
-            tickTime = 5200;
-            jumpChance = 0.38;
+            tickTime = 6000;
+            jumpChance = 0.40;
             tripChance = 0.35;
         } else if (diff === 'hard') {
-            tickTime = 3000;    // Zpomaleno z 2.2s na hratelných 3.0s!
+            tickTime = 4000;    // Zpomaleno z 2.2s na hratelných 3.0s!
             jumpChance = 0.75;  // Snížena neomylnost z 85 % na 75 %
-            tripChance = 0.08;  // Zvýšena šance na lidskou chybu z 2 % na 8 %
+            tripChance = 0.09;  // Zvýšena šance na lidskou chybu z 2 % na 8 %
         }
 
         botInterval = setInterval(() => {
