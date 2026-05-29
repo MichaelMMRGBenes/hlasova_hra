@@ -21,9 +21,31 @@
             padding: 20px;
             border-radius: 15px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            position: relative;
         }
         .screen { display: none; }
         .active { display: block; }
+
+        /* VLAJEČKY PRO JAZYKY */
+        .lang-selector {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 4px 8px;
+            border-radius: 20px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+        .lang-selector span {
+            transition: transform 0.1s;
+        }
+        .lang-selector span:hover {
+            transform: scale(1.25);
+        }
 
         .menu-card {
             background: #f8f9fa;
@@ -126,13 +148,22 @@
 
 <div class="container">
 
-    <div id="global-profile-box" class="menu-card" style="background-color: #fff3e0; border: 2px solid #ffb74d; margin-bottom: 20px;">
-        <label style="font-weight: bold; color: #e67e22;">Tvoje závodní jméno: </label>
+    <div class="lang-selector">
+        <span onclick="setUILanguage('cs')" title="Čeština">🇨🇿</span>
+        <span onclick="setUILanguage('en')" title="English">🇬🇧</span>
+        <span onclick="setUILanguage('de')" title="Deutsch">🇩🇪</span>
+        <span onclick="setUILanguage('fr')" title="Français">🇫🇷</span>
+        <span onclick="setUILanguage('es')" title="Español">🇪🇸</span>
+        <span onclick="setUILanguage('fi')" title="Suomi">🇫🇮</span>
+    </div>
+
+    <div id="global-profile-box" class="menu-card" style="background-color: #fff3e0; border: 2px solid #ffb74d; margin-bottom: 20px; margin-top: 25px;">
+        <label id="lbl-profile" style="font-weight: bold; color: #e67e22;">Tvoje závodní jméno: </label>
         <input type="text" id="player-name-input" value="Běžec" maxlength="12" style="font-weight: bold; text-align: center; width: 180px;">
     </div>
 
     <div id="screen-main" class="screen active">
-        <h2>Hlasový Závod: Vyřazovací Přetahovaná</h2>
+        <h2 id="main-title">Hlasový Závod: Vyřazovací Přetahovaná</h2>
         <div style="display: flex; gap: 15px; justify-content: center; margin-top: 30px;">
             <button id="main-choose-solo" class="btn-large" style="width: 240px;">🏃 Hrát sám (Proti PC)</button>
             <button id="main-choose-online" class="btn-large" style="background-color: #9b59b6; width: 240px;">🌐 Online Multiplayer</button>
@@ -140,111 +171,115 @@
     </div>
 
     <div id="screen-solo-setup" class="screen">
-        <h2>Nastavení Solo hry</h2>
+        <h2 id="title-solo-setup">Nastavení Solo hry</h2>
         <div class="menu-card">
-            <p><label>Obtížnost AI: </label>
+            <p><label id="lbl-diff">Obtížnost AI: </label>
             <select id="difficulty-select">
-                <option value="easy">Lehká (Pomalé AI)</option>
-                <option value="medium" selected>Střední (Vyvážená)</option>
-                <option value="hard">Těžká (Rychlá mašina)</option>
+                <option class="opt-diff-easy" value="easy">Lehká (Pomalé AI)</option>
+                <option class="opt-diff-med" value="medium" selected>Střední (Vyvážená)</option>
+                <option class="opt-diff-hard" value="hard">Těžká (Rychlá mašina)</option>
             </select></p>
 
-            <p><label>Délka trati: </label>
+            <p><label id="lbl-track-solo">Délka trati: </label>
             <select id="track-length-solo">
-                <option value="7">Krátká (7 překážek)</option>
-                <option value="15" selected>Střední (15 překážek)</option>
-                <option value="30">Dlouhá (30 překážek)</option>
+                <option class="opt-track-7" value="7">Krátká (7 překážek)</option>
+                <option class="opt-track-15" value="15" selected>Střední (15 překážek)</option>
+                <option class="opt-track-30" value="30">Dlouhá (30 překážek)</option>
             </select></p>
 
-            <p><label>Mód hry: </label>
+            <p><label id="lbl-mode-solo">Mód hry: </label>
             <select id="game-mode-type-solo">
-                <option value="classic">Klasický (Číslice -> Slovo)</option>
-                <option value="translation" selected>Tlumočení (Hlas A -> Hlasová odpověď B)</option>
+                <option class="opt-mode-classic" value="classic">Klasický (Číslice -> Slovo)</option>
+                <option class="opt-mode-trans" value="translation" selected>Tlumočení (Hlas A -> Hlasová odpověď B)</option>
             </select></p>
             
-            <p id="solo-lang-a-box"><label>Jazyk A (Kterým hra mluví): </label>
+            <p id="solo-lang-a-box"><label id="lbl-lang-solo-a">Jazyk A (Kterým hra mluví): </label>
             <select id="lang-select-solo-a">
                 <option value="en-US" selected>English</option>
                 <option value="cs-CZ">Čeština</option>
                 <option value="de-DE">Deutsch</option>
                 <option value="fr-FR">Français</option>
+                <option value="es-ES">Español</option>
                 <option value="fi-FI">Suomi</option>
             </select></p>
 
-            <p id="solo-lang-b-box"><label>Jazyk B (Kterým odpovídáš ty): </label>
+            <p id="solo-lang-b-box"><label id="lbl-lang-solo-b">Jazyk B (Kterým odpovídáš ty): </label>
             <select id="lang-select-solo-b">
                 <option value="fi-FI" selected>Suomi</option>
                 <option value="cs-CZ">Čeština</option>
                 <option value="en-US">English</option>
                 <option value="de-DE">Deutsch</option>
+                <option value="es-ES">Español</option>
             </select></p>
             <br>
             <button id="solo-start-game-btn" class="btn-success btn-large">Vstoupit na stadion</button>
         </div>
-        <button class="btn-secondary" onclick="changeScreen('screen-main')">← Zpět</button>
+        <button class="btn-secondary btn-back" onclick="changeScreen('screen-main')">← Zpět</button>
     </div>
 
     <div id="screen-online-branch" class="screen">
-        <h2>Online Lobby</h2>
+        <h2 id="title-online-branch">Online Lobby</h2>
         <div style="display: flex; gap: 15px; justify-content: center; margin-top: 20px;">
             <button id="online-go-create" class="btn-success" style="padding: 15px 25px;">➕ Založit novou hru</button>
             <button id="online-go-join" style="background-color: #e67e22; padding: 15px 25px;">🔑 Připojit se ke hře</button>
         </div>
         <br><br>
-        <button class="btn-secondary" onclick="changeScreen('screen-main')">← Zpět do hlavního menu</button>
+        <button class="btn-secondary btn-back-main" onclick="changeScreen('screen-main')">← Zpět do hlavního menu</button>
     </div>
 
     <div id="screen-online-create" class="screen">
-        <h2>Založit novou místnost</h2>
+        <h2 id="title-online-create">Založit novou místnost</h2>
         <div class="menu-card">
-            <p><label>Maximální počet hráčů: </label>
+            <p><label id="lbl-max-players">Maximální počet hráčů: </label>
             <select id="player-count-select">
                 <option value="2">2 Hráči (Duel)</option>
                 <option value="3">3 Hráči</option>
                 <option value="4">4 Hráči</option>
             </select></p>
 
-            <p><label>Délka trati: </label>
+            <p><label id="lbl-track-online">Délka trati: </label>
             <select id="track-length-online">
-                <option value="7">Krátká (7 překážek)</option>
-                <option value="15" selected>Střední (15 překážek)</option>
-                <option value="30">Dlouhá (30 překážek)</option>
+                <option class="opt-track-7" value="7">Krátká (7 překážek)</option>
+                <option class="opt-track-15" value="15" selected>Střední (15 překážek)</option>
+                <option class="opt-track-30" value="30">Dlouhá (30 překážek)</option>
             </select></p>
 
-            <p><label>Mód hry: </label>
+            <p><label id="lbl-mode-online">Mód hry: </label>
             <select id="game-mode-type-online">
-                <option value="classic">Klasický (Číslice -> Slovo)</option>
-                <option value="translation" selected>Tlumočení (Hlas A -> Hlasová odpověď B)</option>
+                <option class="opt-mode-classic" value="classic">Klasický (Číslice -> Slovo)</option>
+                <option class="opt-mode-trans" value="translation" selected>Tlumočení (Hlas A -> Hlasová odpověď B)</option>
             </select></p>
 
-            <p id="online-lang-a-box"><label>Jazyk A (Hlasové zadání): </label>
+            <p id="online-lang-a-box"><label id="lbl-lang-online-a">Jazyk A (Hlasové zadání): </label>
             <select id="lang-select-online-a">
                 <option value="en-US" selected>English</option>
                 <option value="cs-CZ">Čeština</option>
                 <option value="de-DE">Deutsch</option>
+                <option value="es-ES">Español</option>
                 <option value="fi-FI">Suomi</option>
             </select></p>
 
-            <p id="online-lang-b-box"><label>Jazyk B (Mluvená odpověď): </label>
+            <p id="online-lang-b-box"><label id="lbl-lang-online-b">Jazyk B (Mluvená odpověď): </label>
             <select id="lang-select-online-b">
                 <option value="fi-FI" selected>Suomi</option>
                 <option value="cs-CZ">Čeština</option>
                 <option value="en-US">English</option>
+                <option value="es-ES">Español</option>
             </select></p>
             <br>
             <button id="create-room-execute-btn" class="btn-success btn-large">Vytvořit a vygenerovat kód</button>
         </div>
-        <button class="btn-secondary" onclick="changeScreen('screen-online-branch')">← Zpět</button>
+        <button class="btn-secondary btn-back" onclick="changeScreen('screen-online-branch')">← Zpět</button>
     </div>
 
     <div id="screen-online-join" class="screen">
-        <h2>Zadej kód hry</h2>
+        <h2 id="title-online-join">Zadej kód hry</h2>
         <div class="menu-card">
             <input type="text" id="room-code-input" placeholder="Kód místnosti" style="font-size: 20px; text-align: center; width: 180px;">
             <br><br>
             <button id="join-room-execute-btn" class="btn-large" style="background-color: #e67e22;">Vstoupit do místnosti</button>
         </div>
-        <button class="btn-secondary" onclick="changeScreen('screen-online-branch')">← Zpět</button>
+        <button class="btn-secondary btn-back" onclick="changeScreen('screen-online-branch')">← Zpět</button>
     </div>
 
     <div id="screen-game" class="screen">
@@ -263,23 +298,23 @@
 
     <div id="screen-victory" class="screen">
         <div id="victory-title" class="winner-announcement">Vítěz!</div>
-        <h3>Výsledková tabule zápasu</h3>
+        <h3 id="title-stats">Výsledková tabule zápasu</h3>
         <table class="stats-table">
             <thead>
                 <tr>
-                    <th>Hráč</th>
-                    <th>Skóre (Body)</th>
-                    <th>Zbývající životy</th>
-                    <th>Výsledek</th>
+                    <th id="th-player">Hráč</th>
+                    <th id="th-score">Skóre (Body)</th>
+                    <th id="th-lives">Zbývající životy</th>
+                    <th id="th-result">Výsledek</th>
                 </tr>
             </thead>
             <tbody id="stats-tbody"></tbody>
         </table>
         
         <div id="replay-section" style="margin-top: 25px; display: none;">
-            <p>Chceš hrát znovu?</p>
+            <p id="lbl-replay">Chceš hrát znovu?</p>
             <button id="rematch-btn" class="btn-success btn-large">Ano, nová hra</button>
-            <button onclick="changeScreen('screen-main')" class="btn-secondary">Ne, do hlavního menu</button>
+            <button id="btn-to-menu" onclick="changeScreen('screen-main')" class="btn-secondary">Ne, do hlavního menu</button>
         </div>
     </div>
 
@@ -301,22 +336,211 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
+    // --- DIČNÍK PRO MULTIJAZYČNOST ROZHRANÍ (I18N) ---
+    let currentUILang = 'cs';
+    const uiTexts = {
+        cs: {
+            profileLabel: "Tvoje závodní jméno: ", mainTitle: "Hlasový Závod: Vyřazovací Přetahovaná",
+            btnSolo: "🏃 Hrát sám (Proti PC)", btnOnline: "🌐 Online Multiplayer", titleSoloSetup: "Nastavení Solo hry",
+            lblDiff: "Obtížnost AI: ", lblTrack: "Délka trati: ", lblMode: "Mód hry: ",
+            lblLangA: "Jazyk A (Kterým hra mluví): ", lblLangB: "Jazyk B (Kterým odpovídáš ty): ",
+            btnStartStadion: "Vstoupit na stadion", btnBack: "← Zpět", titleOnlineBranch: "Online Lobby",
+            btnCreateRoom: "➕ Založit novou hru", btnJoinRoom: "🔑 Připojit se ke hře", btnBackMain: "← Zpět do hlavního menu",
+            titleCreateRoom: "Založit novou místnost", lblMaxPlayers: "Maximální počet hráčů: ",
+            btnCreateExec: "Vytvořit a vygenerovat kód", titleJoinRoom: "Zadej kód hry", btnJoinExec: "Vstoupit do místnosti",
+            btnStartMatch: "START ZÁVODU", btnRepeat: "🔁 Opakovat výslovnost", lblReplay: "Chceš hrát znovu?",
+            btnRematch: "Ano, nová hra", btnToMenu: "Ne, do hlavního menu", thPlayer: "Hráč", thScore: "Skóre (Body)",
+            thLives: "Zbývající životy", thResult: "Výsledek", titleStats: "Výsledková tabule zápasu",
+            diffEasy: "Lehká (Pomalé AI)", diffMed: "Střední (Vyvážená)", diffHard: "Těžká (Rychlá mašina)",
+            trackShort: "Krátká (7 překážek)", trackMed: "Střední (15 překážek)", trackLong: "Dlouhá (30 překážek)",
+            modeClassic: "Klasický (Číslice -> Slovo)", modeTrans: "Tlumočení (Hlas A -> Hlasová odpověď B)",
+            statusReady: "Připrav se...", statusReadyStart: "Všichni jsou tady. Odstartuj závod!",
+            statusWaitHost: "Čekej, až zakladatel spustí závod...", statusGo: "BĚŽ!!!", statusKick: "💥 KICK! 💥",
+            statusKO: "💀 K.O. 💀", statusListening: "🔊 POSLOUCHEJ...", statusHearing: "Slyším: ",
+            roomLabel: "Místnost: ", soloLabel: "Solo: ", winnerText: "🎉 Zvítězil jsi! 🎉", loserText: "💀 Vítězem se stává: ",
+            badgeFinished: "🥇 VÍTĚZ", badgeEliminated: "❌ VYŘAZEN", badgeNotFinished: "🥈 Nedoběhl"
+        },
+        en: {
+            profileLabel: "Your racing name: ", mainTitle: "Voice Race: Knockout Tug-of-War",
+            btnSolo: "🏃 Play Solo (vs PC)", btnOnline: "🌐 Online Multiplayer", titleSoloSetup: "Solo Game Settings",
+            lblDiff: "AI Difficulty: ", lblTrack: "Track Length: ", lblMode: "Game Mode: ",
+            lblLangA: "Language A (Game speaks): ", lblLangB: "Language B (You speak): ",
+            btnStartStadion: "Enter Stadium", btnBack: "← Back", titleOnlineBranch: "Online Lobby",
+            btnCreateRoom: "➕ Create New Game", btnJoinRoom: "🔑 Join Game", btnBackMain: "← Back to Main Menu",
+            titleCreateRoom: "Create New Room", lblMaxPlayers: "Max Players: ",
+            btnCreateExec: "Create and Generate Code", titleJoinRoom: "Enter Game Code", btnJoinExec: "Enter Room",
+            btnStartMatch: "START RACE", btnRepeat: "🔁 Repeat Pronunciation", lblReplay: "Want to play again?",
+            btnRematch: "Yes, New Game", btnToMenu: "No, Main Menu", thPlayer: "Player", thScore: "Score (Points)",
+            thLives: "Remaining Lives", thResult: "Result", titleStats: "Match Scoreboard",
+            diffEasy: "Easy (Slow AI)", diffMed: "Medium (Balanced)", diffHard: "Hard (Fast Machine)",
+            trackShort: "Short (7 hurdles)", trackMed: "Medium (15 hurdles)", trackLong: "Long (30 hurdles)",
+            modeClassic: "Classic (Digit -> Word)", modeTrans: "Interpretation (Voice A -> Answer B)",
+            statusReady: "Get ready...", statusReadyStart: "Everyone is here. Start the race!",
+            statusWaitHost: "Waiting for the host to start...", statusGo: "GO!!!", statusKick: "💥 KICK! 💥",
+            statusKO: "💀 K.O. 💀", statusListening: "🔊 LISTEN...", statusHearing: "Hearing: ",
+            roomLabel: "Room: ", soloLabel: "Solo: ", winnerText: "🎉 You Won! 🎉", loserText: "💀 Winner is: ",
+            badgeFinished: "🥇 WINNER", badgeEliminated: "❌ ELIMINATED", badgeNotFinished: "🥈 DNF"
+        },
+        de: {
+            profileLabel: "Dein Rennname: ", mainTitle: "Sprachrennen: Knockout-Tauziehen",
+            btnSolo: "🏃 Solo spielen (vs. PC)", btnOnline: "🌐 Online-Multiplayer", titleSoloSetup: "Solo-Spieleinstellungen",
+            lblDiff: "KI-Schwierigkeit: ", lblTrack: "Streckenlänge: ", lblMode: "Spielmodus: ",
+            lblLangA: "Sprache A (Das Spiel spricht): ", lblLangB: "Sprache B (Du sprichst): ",
+            btnStartStadion: "Stadion betreten", btnBack: "← Zurück", titleOnlineBranch: "Online-Lobby",
+            btnCreateRoom: "➕ Neues Spiel erstellen", btnJoinRoom: "🔑 Spiel beitreten", btnBackMain: "← Zurück zum Hauptmenü",
+            titleCreateRoom: "Neuen Raum erstellen", lblMaxPlayers: "Maximale Spielerzahl: ",
+            btnCreateExec: "Erstellen und Code generieren", titleJoinRoom: "Spielcode eingeben", btnJoinExec: "Raum betreten",
+            btnStartMatch: "RENNEN STARTEN", btnRepeat: "🔁 Aussprache wiederholen", lblReplay: "Möchtest du noch einmal spielen?",
+            btnRematch: "Ja, neues Spiel", btnToMenu: "Nein, zum Hauptmenü", thPlayer: "Spieler", thScore: "Punkte",
+            thLives: "Verbleibende Leben", thResult: "Ergebnis", titleStats: "Spiel-Ergebnisliste",
+            diffEasy: "Leicht (Langsame KI)", diffMed: "Mittel (Ausgeglichen)", diffHard: "Schwer (Schnelle Maschine)",
+            trackShort: "Kurz (7 Hürden)", trackMed: "Mittel (15 Hürden)", trackLong: "Lang (30 Hürden)",
+            modeClassic: "Klassisch (Ziffer -> Wort)", modeTrans: "Dolmetschen (Stimme A -> Antwort B)",
+            statusReady: "Mach dich bereit...", statusReadyStart: "Alle sind da. Starte das Rennen!",
+            statusWaitHost: "Warte auf den Host, um das Rennen zu starten...", statusGo: "LOS!!!", statusKick: "💥 KICK! 💥",
+            statusKO: "💀 K.O. 💀", statusListening: "🔊 ZUHÖREN...", statusHearing: "Ich höre: ",
+            roomLabel: "Raum: ", soloLabel: "Solo: ", winnerText: "🎉 Du hast gewonnen! 🎉", loserText: "💀 Gewinner ist: ",
+            badgeFinished: "🥇 GEWINNER", badgeEliminated: "❌ AUSGESCHIEDEN", badgeNotFinished: "🥈 Nicht im Ziel"
+        },
+        fr: {
+            profileLabel: "Votre nom de course : ", mainTitle: "Course Vocale : Tir à la Corde Éliminatoire",
+            btnSolo: "🏃 Jouer Solo (vs PC)", btnOnline: "🌐 Multijoueur en ligne", titleSoloSetup: "Paramètres du jeu Solo",
+            lblDiff: "Difficulté de l'IA : ", lblTrack: "Longueur de la piste : ", lblMode: "Mode de jeu : ",
+            lblLangA: "Langue A (Le jeu parle) : ", lblLangB: "Langue B (Vous parlez) : ",
+            btnStartStadion: "Entrer dans le stade", btnBack: "← Retour", titleOnlineBranch: "Lobby en ligne",
+            btnCreateRoom: "➕ Créer une nouvelle partie", btnJoinRoom: "🔑 Rejoindre une partie", btnBackMain: "← Retour au menu principal",
+            titleCreateRoom: "Créer un salon", lblMaxPlayers: "Joueurs max : ",
+            btnCreateExec: "Créer et générer le code", titleJoinRoom: "Entrer le code du jeu", btnJoinExec: "Entrer dans le salon",
+            btnStartMatch: "DÉMARRER LA COURSE", btnRepeat: "🔁 Répéter la prononciation", lblReplay: "Voulez-vous rejouer ?",
+            btnRematch: "Oui, nouvelle partie", btnToMenu: "Non, menu principal", thPlayer: "Joueur", thScore: "Score (Points)",
+            thLives: "Vies restantes", thResult: "Résultat", titleStats: "Tableau des scores",
+            diffEasy: "Facile (IA lente)", diffMed: "Moyen (Équilibré)", diffHard: "Difficile (Machine rapide)",
+            trackShort: "Court (7 haies)", trackMed: "Moyen (15 haies)", trackLong: "Long (30 haies)",
+            modeClassic: "Classique (Chiffre -> Mot)", modeTrans: "Interprétation (Voix A -> Réponse B)",
+            statusReady: "Préparez-vous...", statusReadyStart: "Tout le monde est là. Démarrez la course !",
+            statusWaitHost: "En attente de l'hôte...", statusGo: "ALLEZ !!!", statusKick: "💥 CHUTE ! 💥",
+            statusKO: "💀 K.O. 💀", statusListening: "🔊 ÉCOUTER...", statusHearing: "J'entends : ",
+            roomLabel: "Salon : ", soloLabel: "Solo : ", winnerText: "🎉 Vous avez gagné ! 🎉", loserText: "💀 Le gagnant est : ",
+            badgeFinished: "🥇 VAINQUEUR", badgeEliminated: "❌ ÉLIMINÉ", badgeNotFinished: "🥈 Pas fini"
+        },
+        es: {
+            profileLabel: "Tu nombre de carrera: ", mainTitle: "Carrera de Voz: Tiro con Cuerda Eliminatorio",
+            btnSolo: "🏃 Jugar Solo (vs PC)", btnOnline: "🌐 Multijugador Online", titleSoloSetup: "Ajustes de Juego Solo",
+            lblDiff: "Dificultad de IA: ", lblTrack: "Longitud de Pista: ", lblMode: "Modo de Juego: ",
+            lblLangA: "Idioma A (El juego habla): ", lblLangB: "Idioma B (Tú hablas): ",
+            btnStartStadion: "Entrar al Estadio", btnBack: "← Volver", titleOnlineBranch: "Lobby Online",
+            btnCreateRoom: "➕ Crear Nueva Partida", btnJoinRoom: "🔑 Unirse a Partida", btnBackMain: "← Volver al Menú Principal",
+            titleCreateRoom: "Crear Nueva Sala", lblMaxPlayers: "Máx. Jugadores: ",
+            btnCreateExec: "Crear y Generar Código", titleJoinRoom: "Ingresar Código de Juego", btnJoinExec: "Entrar a la Sala",
+            btnStartMatch: "INICIAR CARRERA", btnRepeat: "🔁 Repetir Pronunciación", lblReplay: "¿Quieres jugar de nuevo?",
+            btnRematch: "Sí, Nueva Partida", btnToMenu: "No, Menú Principal", thPlayer: "Jugador", thScore: "Puntuación",
+            thLives: "Vidas Restantes", thResult: "Resultado", titleStats: "Tabla de Clasificación",
+            diffEasy: "Fácil (IA lenta)", diffMed: "Media (Equilibrada)", diffHard: "Difícil (Máquina rápida)",
+            trackShort: "Corta (7 obstáculos)", trackMed: "Media (15 obstáculos)", trackLong: "Larga (30 obstáculos)",
+            modeClassic: "Clásico (Dígito -> Palabra)", modeTrans: "Interpretación (Voz A -> Respuesta B)",
+            statusReady: "Prepárate...", statusReadyStart: "Todos están aquí. ¡Inicia la carrera!",
+            statusWaitHost: "Esperando que el anfitrión inicie...", statusGo: "¡¡¡CORRE!!!", statusKick: "💥 ¡TROPIEZO! 💥",
+            statusKO: "💀 K.O. 💀", statusListening: "🔊 ESCUCHA...", statusHearing: "Escucho: ",
+            roomLabel: "Sala: ", soloLabel: "Solo: ", winnerText: "🎉 ¡Ganaste la carrera! 🎉", loserText: "💀 El ganador es: ",
+            badgeFinished: "🥇 GANADOR", badgeEliminated: "❌ ELIMINADO", badgeNotFinished: "🥈 No terminó"
+        },
+        fi: {
+            profileLabel: "Kilpajuoksijanimesi: ", mainTitle: "Äänikisa: Pudotusköysiveto",
+            btnSolo: "🏃 Pelaa yksin (vs tietokone)", btnOnline: "🌐 Verkkomoninpeli", titleSoloSetup: "Yksinpelin asetukset",
+            lblDiff: "Tietokoneen vaikeustaso: ", lblTrack: "Radan pituus: ", lblMode: "Pelitila: ",
+            lblLangA: "Kieli A (Peli puhuu): ", lblLangB: "Kieli B (Sinä puhut): ",
+            btnStartStadion: "Astu stadionille", btnBack: "← Takaisin", titleOnlineBranch: "Verkkolobby",
+            btnCreateRoom: "➕ Luo uusi peli", btnJoinRoom: "🔑 Liity peliin", btnBackMain: "← Takaisin päävalikkoon",
+            titleCreateRoom: "Luo uusi huone", lblMaxPlayers: "Pelaajien enimmäismäärä: ",
+            btnCreateExec: "Luo huone ja koodi", titleJoinRoom: "Syötä pelikoodi", btnJoinExec: "Astu huoneeseen",
+            btnStartMatch: "ALOITA KISA", btnRepeat: "🔁 Toista ääntäminen", lblReplay: "Haluatko pelata uudelleen?",
+            btnRematch: "Kyllä, uusi peli", btnToMenu: "Ei, päävalikkoon", thPlayer: "Pelaaja", thScore: "Pisteet",
+            thLives: "Elämät jäljellä", thResult: "Tulos", titleStats: "Ottelun tulostaulukko",
+            diffEasy: "Helppo (Hidas AI)", diffMed: "Keskitaso (Tasapainoinen)", diffHard: "Vaikea (Nopea kone)",
+            trackShort: "Lyhyt (7 estettä)", trackMed: "Keskitaso (15 estettä)", trackLong: "Pitkä (30 estettä)",
+            modeClassic: "Klassinen (Numero -> Sana)", modeTrans: "Tulkkaus (Ääni A -> Vastaus B)",
+            statusReady: "Valmistaudu...", statusReadyStart: "Kaikki ovat paikalla. Aloita kisa!",
+            statusWaitHost: "Odotetaan, että huoneen luoja aloittaa kisan...", statusGo: "JUOKSE!!!", statusKick: "💥 JALKAMURSKA! 💥",
+            statusKO: "💀 K.O. 💀", statusListening: "🔊 KUUNTELE...", statusHearing: "Kuulen: ",
+            roomLabel: "Huone: ", soloLabel: "Solo: ", winnerText: "🎉 Sinä voitit! 🎉", loserText: "💀 Voittaja on: ",
+            badgeFinished: "🥇 VOITTAJA", badgeEliminated: "❌ PUDOTETTU", badgeNotFinished: "🥈 Ei maalissa"
+        }
+    };
+
+    function setUILanguage(lang) {
+        currentUILang = lang;
+        const t = uiTexts[lang];
+        if(!t) return;
+
+        // Statické texty
+        document.getElementById('lbl-profile').textContent = t.profileLabel;
+        document.getElementById('main-title').textContent = t.mainTitle;
+        document.getElementById('main-choose-solo').textContent = t.btnSolo;
+        document.getElementById('main-choose-online').textContent = t.btnOnline;
+        document.getElementById('title-solo-setup').textContent = t.titleSoloSetup;
+        document.getElementById('lbl-diff').textContent = t.lblDiff;
+        document.getElementById('lbl-track-solo').textContent = t.lblTrack;
+        document.getElementById('lbl-mode-solo').textContent = t.lblMode;
+        document.getElementById('lbl-lang-solo-a').textContent = t.lblLangA;
+        document.getElementById('lbl-lang-solo-b').textContent = t.lblLangB;
+        document.getElementById('solo-start-game-btn').textContent = t.btnStartStadion;
+        document.getElementById('title-online-branch').textContent = t.titleOnlineBranch;
+        document.getElementById('online-go-create').textContent = t.btnCreateRoom;
+        document.getElementById('online-go-join').textContent = t.btnJoinRoom;
+        document.getElementById('title-online-create').textContent = t.titleCreateRoom;
+        document.getElementById('lbl-max-players').textContent = t.lblMaxPlayers;
+        document.getElementById('lbl-track-online').textContent = t.lblTrack;
+        document.getElementById('lbl-mode-online').textContent = t.lblMode;
+        document.getElementById('lbl-lang-online-a').textContent = t.lblLangOnlineA;
+        document.getElementById('lbl-lang-online-b').textContent = t.lblLangOnlineB;
+        document.getElementById('create-room-execute-btn').textContent = t.btnCreateExec;
+        document.getElementById('title-online-join').textContent = t.titleJoinRoom;
+        document.getElementById('join-room-execute-btn').textContent = t.btnJoinExec;
+        document.getElementById('start-match-btn').textContent = t.btnStartMatch;
+        document.getElementById('repeat-voice-btn').innerHTML = t.btnRepeat;
+        document.getElementById('lbl-replay').textContent = t.lblReplay;
+        document.getElementById('rematch-btn').textContent = t.btnRematch;
+        document.getElementById('btn-to-menu').textContent = t.btnToMenu;
+        document.getElementById('title-stats').textContent = t.titleStats;
+        
+        document.getElementById('th-player').textContent = t.thPlayer;
+        document.getElementById('th-score').textContent = t.thScore;
+        document.getElementById('th-lives').textContent = t.thLives;
+        document.getElementById('th-result').textContent = t.thResult;
+
+        // Selektory / Optiony podle tříd
+        document.querySelectorAll('.opt-diff-easy').forEach(el => el.textContent = t.diffEasy);
+        document.querySelectorAll('.opt-diff-med').forEach(el => el.textContent = t.diffMed);
+        document.querySelectorAll('.opt-diff-hard').forEach(el => el.textContent = t.diffHard);
+        document.querySelectorAll('.opt-track-7').forEach(el => el.textContent = t.trackShort);
+        document.querySelectorAll('.opt-track-15').forEach(el => el.textContent = t.trackMed);
+        document.querySelectorAll('.opt-track-30').forEach(el => el.textContent = t.trackLong);
+        document.querySelectorAll('.opt-mode-classic').forEach(el => el.textContent = t.modeClassic);
+        document.querySelectorAll('.opt-mode-trans').forEach(el => el.textContent = t.modeTrans);
+        document.querySelectorAll('.btn-back').forEach(el => el.textContent = t.btnBack);
+        document.querySelectorAll('.btn-back-main').forEach(el => el.textContent = t.btnBackMain);
+
+        if(!gameStarted) statusEl.textContent = t.statusReady;
+    }
+
     // --- RENDER & GAMEPLAY CONFIG ---
     const canvas = document.getElementById('game-canvas');
     const ctx = canvas.getContext('2d');
     
     const START_WORLD_X = 120;
     const STEP_X = 110;       
-    let stepsToFinish = 15; // Výchozí počet kroků do cíle
+    let stepsToFinish = 15; 
     let FINISH_LINE_WORLD_X = START_WORLD_X + (stepsToFinish * STEP_X);
 
     const playerColors = ["#3498db", "#e74c3c", "#9b59b6", "#e67e22"];
 
+    // PŘIDÁNA ŠPANĚLŠTINA DO SLOVNÍCH MAP
     const languageMaps1To10 = {
         'cs-CZ': { 1: ['1', 'jeden', 'jedna'], 2: ['2', 'dva'], 3: ['3', 'tři'], 4: ['4', 'čtyři'], 5: ['5', 'pět'], 6: ['6', 'šest'], 7: ['7', 'sedm'], 8: ['8', 'osm'], 9: ['9', 'devět'], 10: ['10', 'deset'] },
         'en-US': { 1: ['1', 'one'], 2: ['2', 'two'], 3: ['3', 'three'], 4: ['4', 'four'], 5: ['5', 'five'], 6: ['6', 'six'], 7: ['7', 'seven'], 8: ['8', 'eight'], 9: ['9', 'nine'], 10: ['10', 'ten'] },
         'de-DE': { 1: ['1', 'eins', 'eine'], 2: ['2', 'zwei'], 3: ['3', 'drei'], 4: ['4', 'vier'], 5: ['5', 'fünf'], 6: ['6', 'sechs'], 7: ['7', 'sieben'], 8: ['8', 'acht'], 9: ['9', 'neun'], 10: ['10', 'zehn'] },
         'fr-FR': { 1: ['1', 'un', 'une'], 2: ['2', 'deux'], 3: ['3', 'trois'], 4: ['4', 'quatre'], 5: ['5', 'cinq'], 6: ['6', 'six'], 7: ['7', 'sept'], 8: ['8', 'huit'], 9: ['9', 'neuf'], 10: ['10', 'dix'] },
+        'es-ES': { 1: ['1', 'uno'], 2: ['2', 'dos'], 3: ['3', 'tres'], 4: ['4', 'cuatro'], 5: ['5', 'cinco'], 6: ['6', 'seis'], 7: ['7', 'siete'], 8: ['8', 'ocho'], 9: ['9', 'nueve'], 10: ['10', 'diez'] },
         'fi-FI': { 1: ['1', 'yksi'], 2: ['2', 'kaksi'], 3: ['3', 'kolme'], 4: ['4', 'neljä'], 5: ['5', 'viisi'], 6: ['6', 'kuusi'], 7: ['7', 'seitsemän'], 8: ['8', 'kahdeksan'], 9: ['9', 'yhdeksän'], 10: ['10', 'kymmenen'] }
     };
 
@@ -325,6 +549,7 @@
         'en-US': ["", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"],
         'de-DE': ["", "eins", "zwei", "drei", "vier", "fünf", "sechs", "sieben", "acht", "neun", "zehn"],
         'fr-FR': ["", "un", "deux", "trois", "quatre", "cinq", "six", "sept", "huit", "neuf", "dix"],
+        'es-ES': ["", "uno", "dos", "tres", "cuatro", "cinco", "seis", "siete", "ocho", "nueve", "diez"],
         'fi-FI': ["", "yksi", "kaksi", "kolme", "neljä", "viisi", "kuusi", "seitsemän", "kahdeksan", "yhdeksän", "kymmenen"]
     };
 
@@ -389,7 +614,6 @@
             return; 
         }
 
-        // Pokud je číslo <= 10, vezme text, jinak pošle řetězec čísla (TTS enginy ho přečtou nativně v daném jazyce)
         let textToSpeak = (num <= 10 && languageWordsText[lang]) ? languageWordsText[lang][num] : num.toString();
         const utterance = new SpeechSynthesisUtterance(textToSpeak);
         utterance.lang = lang;
@@ -440,19 +664,19 @@
         gameMode = 'solo'; myRole = 'p1';
         currentModeType = document.getElementById('game-mode-type-solo').value;
         langA = document.getElementById('lang-select-solo-a').value;
-        langB = (currentModeType === 'translation') ? document.getElementById('lang-select-solo-b').value : langA;
+        var bSelect = document.getElementById('lang-select-solo-b').value;
+        langB = (currentModeType === 'translation') ? bSelect : langA;
         
-        // Nastavení délky trati pro Solo
         stepsToFinish = parseInt(document.getElementById('track-length-solo').value);
         FINISH_LINE_WORLD_X = START_WORLD_X + (stepsToFinish * STEP_X);
 
         myState.name = document.getElementById('player-name-input').value.trim() || "Ty";
-        remotePlayers['bot'] = { score: 0, lives: 3, state: 'running', y: 0, jumpProgress: 0, worldX: START_WORLD_X, name: "Počítač (AI)" };
+        remotePlayers['bot'] = { score: 0, lives: 3, state: 'running', y: 0, jumpProgress: 0, worldX: START_WORLD_X, name: "AI Bot" };
         
         changeScreen('screen-game');
-        document.getElementById('room-id-display').textContent = `Solo: ${currentModeType.toUpperCase()}`;
+        document.getElementById('room-id-display').textContent = `${uiTexts[currentUILang].soloLabel} ${currentModeType.toUpperCase()}`;
         startMatchBtn.style.display = 'inline-block';
-        statusEl.textContent = "Připraven u startovní čáry.";
+        statusEl.textContent = uiTexts[currentUILang].statusReady;
         renderHUD();
     });
 
@@ -465,7 +689,6 @@
         langA = document.getElementById('lang-select-online-a').value;
         langB = (currentModeType === 'translation') ? document.getElementById('lang-select-online-b').value : langA;
         
-        // Nastavení délky trati pro Online
         stepsToFinish = parseInt(document.getElementById('track-length-online').value);
         FINISH_LINE_WORLD_X = START_WORLD_X + (stepsToFinish * STEP_X);
 
@@ -478,8 +701,8 @@
         });
         
         changeScreen('screen-game');
-        document.getElementById('room-id-display').textContent = `Místnost: ${code}`;
-        statusEl.textContent = `Čeká se na soupeře (${maxPlayersInRoom})...`;
+        document.getElementById('room-id-display').textContent = `${uiTexts[currentUILang].roomLabel} ${code}`;
+        statusEl.textContent = uiTexts[currentUILang].statusReady;
         listenToRoom();
     });
 
@@ -502,7 +725,6 @@
             myRole = 'p' + (activeKeys.length + 1); myState.name = chosenName;
             currentModeType = data.modeType || 'classic'; langA = data.langA; langB = data.langB;
             
-            // Synchronizace délky trati z DB
             stepsToFinish = data.trackLength || 15;
             FINISH_LINE_WORLD_X = START_WORLD_X + (stepsToFinish * STEP_X);
 
@@ -511,7 +733,7 @@
             if(activeKeys.length + 1 === data.maxPlayers) updates['status'] = 'ready';
 
             roomRef.update(updates); changeScreen('screen-game');
-            document.getElementById('room-id-display').textContent = `Místnost: ${code}`;
+            document.getElementById('room-id-display').textContent = `${uiTexts[currentUILang].roomLabel} ${code}`;
             listenToRoom();
         });
     });
@@ -524,7 +746,6 @@
             currentModeType = data.modeType || 'classic';
             langA = data.langA; langB = data.langB;
             
-            // Plynulá synchronizace délky trati u připojených hráčů
             stepsToFinish = data.trackLength || 15;
             FINISH_LINE_WORLD_X = START_WORLD_X + (stepsToFinish * STEP_X);
             
@@ -541,9 +762,9 @@
             if (data.status === 'ready' && !gameStarted) {
                 if (myRole === 'p1') {
                     startMatchBtn.style.display = 'inline-block';
-                    statusEl.textContent = "Všichni jsou tady. Odstartuj závod!";
+                    statusEl.textContent = uiTexts[currentUILang].statusReadyStart;
                 } else {
-                    statusEl.textContent = "Čekej, až zakladatel spustí závod...";
+                    statusEl.textContent = uiTexts[currentUILang].statusWaitHost;
                 }
             }
             if (data.status === 'playing' && !gameStarted) executeStart();
@@ -552,15 +773,16 @@
 
     function renderHUD() {
         hudContainer.innerHTML = "";
-        let myHearts = myState.lives > 0 ? "❤️".repeat(myState.lives) + "🖤".repeat(3 - myState.lives) : "💀 VYŘAZEN";
+        let t = uiTexts[currentUILang];
+        let myHearts = myState.lives > 0 ? "❤️".repeat(myState.lives) + "🖤".repeat(3 - myState.lives) : `💀 ${t.badgeEliminated}`;
         let myBadge = document.createElement('div');
         myBadge.className = "hud-badge mine";
-        myBadge.textContent = `${myState.name} (Ty): ${myState.score} b. | ${myHearts}`;
+        myBadge.textContent = `${myState.name} (You): ${myState.score} b. | ${myHearts}`;
         hudContainer.appendChild(myBadge);
 
         Object.keys(remotePlayers).forEach(k => {
             let p = remotePlayers[k];
-            let hearts = p.lives > 0 ? "❤️".repeat(p.lives) + "🖤".repeat(3 - p.lives) : "💀 VYŘAZEN";
+            let hearts = p.lives > 0 ? "❤️".repeat(p.lives) + "🖤".repeat(3 - p.lives) : `💀 ${t.badgeEliminated}`;
             let badge = document.createElement('div');
             badge.className = "hud-badge";
             badge.textContent = `${p.name}: ${p.score} b. | ${hearts}`;
@@ -575,13 +797,12 @@
             let keys = [myRole, ...Object.keys(remotePlayers)];
             let updates = { status: 'playing' };
             keys.forEach(k => {
-                updates[k + '/currentNumber'] = Math.floor(Math.random() * 100) + 1;
+                updates[k + '/currentNumber'] = getRandomTargetNumber();
             });
             roomRef.update(updates);
         }
     });
 
-    // Změna rozsahu generování: Nyní plný rozsah 1 až 100
     function getRandomTargetNumber() {
         return Math.floor(Math.random() * 100) + 1;
     }
@@ -589,7 +810,7 @@
     function executeStart() {
         gameStarted = true;
         startMatchBtn.style.display = 'none';
-        statusEl.textContent = "BĚŽ!!!";
+        statusEl.textContent = uiTexts[currentUILang].statusGo;
         
         if (currentModeType === 'translation') {
             repeatBtn.style.display = 'inline-block';
@@ -659,16 +880,13 @@
         let maxWorldX = Math.max(...alive.map(p => p.worldX));
         
         if (myState.lives > 0 && (maxWorldX - myState.worldX) >= 4 * STEP_X) {
-            myState.lives = 0;
-            myState.state = 'tripping';
-            sendStateToFirebase();
-            renderHUD();
+            myState.lives = 0; myState.state = 'tripping';
+            sendStateToFirebase(); renderHUD();
         }
         
         if (gameMode === 'solo' && remotePlayers['bot'] && remotePlayers['bot'].lives > 0) {
             if ((maxWorldX - remotePlayers['bot'].worldX) >= 4 * STEP_X) {
-                remotePlayers['bot'].lives = 0;
-                remotePlayers['bot'].state = 'tripping';
+                remotePlayers['bot'].lives = 0; remotePlayers['bot'].state = 'tripping';
                 renderHUD();
             }
         }
@@ -688,8 +906,7 @@
         let reachedFinish = all.filter(p => p.worldX >= FINISH_LINE_WORLD_X && p.lives > 0);
         
         if(reachedFinish.length > 0) {
-            reachedFinish.sort((a,b) => b.worldX - a.worldX); 
-            winnerId = reachedFinish[0].id;
+            reachedFinish.sort((a,b) => b.worldX - a.worldX); winnerId = reachedFinish[0].id;
         } 
         else if (all.length > 1 && alivePlayers.length === 1) {
             winnerId = alivePlayers[0].id;
@@ -713,18 +930,19 @@
         const titleEl = document.getElementById('victory-title');
         const tbody = document.getElementById('stats-tbody');
         tbody.innerHTML = "";
+        let t = uiTexts[currentUILang];
 
         if (winnerId === myRole) {
-            titleEl.textContent = "🎉 Zvítězil jsi! Přežil jsi jako poslední! 🎉"; titleEl.style.color = "#2ecc71";
+            titleEl.textContent = t.winnerText; titleEl.style.color = "#2ecc71";
         } else {
             let winnerName = remotePlayers[winnerId] ? remotePlayers[winnerId].name : "Soupeř";
-            titleEl.textContent = `💀 Vítězem se stává: ${winnerName} 💀`; titleEl.style.color = "#e74c3c";
+            titleEl.textContent = `${t.loserText} ${winnerName} 💀`; titleEl.style.color = "#e74c3c";
         }
 
         allPlayersList.sort((a,b) => b.score - a.score).forEach(p => {
             let tr = document.createElement('tr');
-            let displayName = p.id === myRole ? `<b>${p.name} (Ty)</b>` : p.name;
-            let statusText = p.id === winnerId ? "🥇 VÍTĚZ" : (p.lives <= 0 ? "❌ VYŘAZEN" : "🥈 Nedoběhl");
+            let displayName = p.id === myRole ? `<b>${p.name}</b>` : p.name;
+            let statusText = p.id === winnerId ? t.badgeFinished : (p.lives <= 0 ? t.badgeEliminated : t.badgeNotFinished);
             tr.innerHTML = `<td>${displayName}</td><td>${p.score}</td><td>${p.lives > 0 ? p.lives+'/3':'0/3'}</td><td>${statusText}</td>`;
             tbody.appendChild(tr);
         });
@@ -738,9 +956,9 @@
         if (savedMode === 'solo') {
             gameMode = 'solo'; myRole = 'p1';
             myState.name = document.getElementById('player-name-input').value.trim() || "Ty";
-            remotePlayers['bot'] = { score: 0, lives: 3, state: 'running', y: 0, jumpProgress: 0, worldX: START_WORLD_X, name: "Počítač (AI)" };
+            remotePlayers['bot'] = { score: 0, lives: 3, state: 'running', y: 0, jumpProgress: 0, worldX: START_WORLD_X, name: "AI Bot" };
             changeScreen('screen-game'); startMatchBtn.style.display = 'inline-block';
-            statusEl.textContent = "Zápas restartován."; renderHUD();
+            statusEl.textContent = uiTexts[currentUILang].statusReady; renderHUD();
         } else if (roomRef) {
             gameMode = 'online';
             if (myRole === 'p1') {
@@ -754,10 +972,9 @@
 
     function handleLiveVoiceInput(rawText) {
         const cleanText = rawText.toLowerCase().replace(/[.,?!]/g, '').trim();
-        statusEl.textContent = `Slyším: "${cleanText}"`;
+        statusEl.textContent = `${uiTexts[currentUILang].statusHearing} "${cleanText}"`;
 
         let matched = false;
-        // Do 10 kontrolujeme slovní mapu, nad 10 kontrolujeme číselný řetězec z přepisu řeči
         if (myState.currentNumber <= 10) {
             const validAnswers = languageMaps1To10[langB][myState.currentNumber];
             if (validAnswers && validAnswers.some(ans => cleanText.includes(ans))) matched = true;
@@ -892,7 +1109,6 @@
             }
         }
 
-        // Vykreslování překážek podle dynamické délky trati
         for(let i = 0; i < stepsToFinish; i++) {
             let hurdleWorldX = START_WORLD_X + (i * STEP_X) + 55;
             let hurdleScreenX = hurdleWorldX - cameraX;
@@ -922,9 +1138,9 @@
         draw();
         if (gameStarted) {
             checkWinConditions();
+            let t = uiTexts[currentUILang];
 
             if (myState.lives > 0 && myState.state === 'running') {
-                
                 if (myState.currentNumber !== lastSpokenNumber && myState.currentNumber > 0) {
                     lastSpokenNumber = myState.currentNumber;
                     if (currentModeType === 'translation') {
@@ -933,19 +1149,21 @@
                 }
 
                 if (currentModeType === 'translation') {
-                    numberEl.textContent = "🔊 POSLOUCHEJ...";
+                    numberEl.textContent = t.statusListening;
                 } else {
                     numberEl.textContent = myState.currentNumber; 
                 }
             } else if (myState.state === 'tripping') {
-                numberEl.textContent = "💥 KICK! 💥";
+                numberEl.textContent = t.statusKick;
             } else if (myState.lives <= 0) {
-                numberEl.textContent = "💀 K.O. 💀";
+                numberEl.textContent = t.statusKO;
             }
             requestAnimationFrame(gameLoop);
         }
     }
 
+    // Inicializace výchozího jazyka na češtinu
+    setUILanguage('cs');
     draw();
 </script>
 </body>
