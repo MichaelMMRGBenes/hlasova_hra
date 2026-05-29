@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hra s čísly a hlasem</title>
+    <title>Hlasová hra s čísly</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             text-align: center;
             background-color: #f4f7f6;
             color: #333;
-            margin-top: 50px;
+            margin-top: 40px;
         }
         .container {
             max-width: 500px;
@@ -20,30 +20,45 @@
             border-radius: 15px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
+        .settings {
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        select {
+            padding: 8px 15px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            background-color: #fff;
+            cursor: pointer;
+        }
         #number {
-            font-size: 96px;
+            font-size: 110px;
             font-weight: bold;
             color: #2ecc71;
-            margin: 20px 0;
+            margin: 15px 0;
             transition: transform 0.2s;
         }
         #score {
             font-size: 24px;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
         #status {
             font-style: italic;
             color: #7f8c8d;
-            min-height: 24px;
+            min-height: 48px;
+            padding: 0 10px;
         }
         button {
-            padding: 12px 25px;
+            padding: 12px 30px;
             font-size: 18px;
             background-color: #3498db;
             color: white;
             border: none;
             border-radius: 5px;
             cursor: pointer;
+            font-weight: bold;
         }
         button:hover {
             background-color: #2980b9;
@@ -53,10 +68,20 @@
 <body>
 
 <div class="container">
-    <h1>Řekni číslo!</h1>
+    <div class="settings">
+        <label for="lang-select"><strong>Jazyk / Language: </strong></label>
+        <select id="lang-select">
+            <option value="cs-CZ">Čeština</option>
+            <option value="en-US">English (Angličtina)</option>
+            <option value="de-DE">Deutsch (Němčina)</option>
+            <option value="fr-FR">Français (Francouzština)</option>
+            <option value="fi-FI">Suomi (Finština)</option>
+        </select>
+    </div>
+
     <div id="score">Skóre: <strong id="score-val">0</strong></div>
     <div id="number">-</div>
-    <p id="status">Klikni na tlačítko a povol mikrofon.</p>
+    <p id="status">Vyber jazyk, klikni na tlačítko a povol mikrofon.</p>
     <button id="start-btn">Spustit hru</button>
 </div>
 
@@ -65,12 +90,36 @@
     let currentNumber = 0;
     let gameActive = false;
 
+    // Slovníky pro rozpoznávání textové podoby čísel
+    const languageMaps = {
+        'cs-CZ': {
+            1: ['1', 'jeden', 'jedna'], 2: ['2', 'dva'], 3: ['3', 'tři'], 4: ['4', 'čtyři'], 5: ['5', 'pět'],
+            6: ['6', 'šest'], 7: ['7', 'sedm'], 8: ['8', 'osm'], 9: ['9', 'devět'], 10: ['10', 'deset']
+        },
+        'en-US': {
+            1: ['1', 'one'], 2: ['2', 'two'], 3: ['3', 'three'], 4: ['4', 'four'], 5: ['5', 'five'],
+            6: ['6', 'six'], 7: ['7', 'seven'], 8: ['8', 'eight'], 9: ['9', 'nine'], 10: ['10', 'ten']
+        },
+        'de-DE': {
+            1: ['1', 'eins', 'eine'], 2: ['2', 'zwei'], 3: ['3', 'drei'], 4: ['4', 'vier'], 5: ['5', 'fünf'],
+            6: ['6', 'sechs'], 7: ['7', 'sieben'], 8: ['8', 'acht'], 9: ['9', 'neun'], 10: ['10', 'zehn']
+        },
+        'fr-FR': {
+            1: ['1', 'un', 'une'], 2: ['2', 'deux'], 3: ['3', 'trois'], 4: ['4', 'quatre'], 5: ['5', 'cinq'],
+            6: ['6', 'six'], 7: ['7', 'sept'], 8: ['8', 'huit'], 9: ['9', 'neuf'], 10: ['10', 'dix']
+        },
+        'fi-FI': {
+            1: ['1', 'yksi'], 2: ['2', 'kaksi'], 3: ['3', 'kolme'], 4: ['4', 'neljä'], 5: ['5', 'viisi'],
+            6: ['6', 'kuusi'], 7: ['7', 'seitsemän'], 8: ['8', 'kahdeksan'], 9: ['9', 'yhdeksän'], 10: ['10', 'kymmenen']
+        }
+    };
+
     const numberEl = document.getElementById('number');
     const scoreEl = document.getElementById('score-val');
     const statusEl = document.getElementById('status');
     const startBtn = document.getElementById('start-btn');
+    const langSelect = document.getElementById('lang-select');
 
-    // Kontrola, zda prohlížeč podporuje rozpoznávání hlasu
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     
     if (!SpeechRecognition) {
@@ -78,56 +127,72 @@
         startBtn.disabled = true;
     } else {
         const recognition = new SpeechRecognition();
-        recognition.lang = 'cs-CZ'; // Nastavení češtiny
-        recognition.continuous = true; // Nepřestane poslouchat po jednom slovu
-        recognition.interimResults = false; // Chceme jen finální výsledky
+        recognition.continuous = true;
+        recognition.interimResults = false;
 
-        // Generování nového čísla (1 až 10)
         function nextNumber() {
             currentNumber = Math.floor(Math.random() * 10) + 1;
             numberEl.textContent = currentNumber;
-            // Drobný vizuální efekt
             numberEl.style.transform = "scale(1.1)";
             setTimeout(() => numberEl.style.transform = "scale(1)", 200);
         }
 
-        // Spuštění hry po kliknutí
+        // Spuštění hry
         startBtn.addEventListener('click', () => {
             if (!gameActive) {
-                recognition.start();
                 gameActive = true;
                 startBtn.style.display = 'none';
-                statusEl.textContent = "Poslouchám... Řekni číslo na obrazovce.";
+                statusEl.textContent = "Poslouchám... Řekni číslo na obrazovce ve zvoleném jazyce.";
                 nextNumber();
+                
+                recognition.lang = langSelect.value;
+                recognition.start();
             }
         });
 
-        // Zpracování výsledku z mikrofonu
-        recognition.onresult = (event) => {
-            // Získáme poslední vyřčené slovo/číslo
-            const lastResultIndex = event.results.length - 1;
-            const textFromServer = event.results[lastResultIndex][0].transcript.trim();
-            
-            statusEl.textContent = `Slyšel jsem: "${textFromServer}"`;
+        // Změna jazyka za běhu hry
+        langSelect.addEventListener('change', () => {
+            if (gameActive) {
+                statusEl.textContent = "Přepínám jazyk...";
+                recognition.stop(); // Vyvolá onend, kde se recognition znovu nastartuje s novým jazykem
+            }
+        });
 
-            // Porovnání (převedeme text na číslo, pokud to jde)
-            if (textFromServer == currentNumber) {
+        // Zpracování výsledku
+        recognition.onresult = (event) => {
+            const lastResultIndex = event.results.length - 1;
+            const textFromServer = event.results[lastResultIndex][0].transcript;
+            
+            // Vyčištění textu (převod na malá písmena, odstranění teček/otazníků)
+            const cleanText = textFromServer.toLowerCase().replace(/[.,?!]/g, '').trim();
+            
+            statusEl.textContent = `Slyšel jsem: "${cleanText}"`;
+
+            // Získání povolených frází pro aktuální jazyk a číslo
+            const currentLang = langSelect.value;
+            const validAnswers = languageMaps[currentLang][currentNumber];
+
+            // Kontrola, zda vyřčený text odpovídá některé z povolených variant
+            if (validAnswers.includes(cleanText)) {
                 score++;
                 scoreEl.textContent = score;
-                statusEl.textContent = `Správně! 🎉 (Slyšel jsem: ${textFromServer})`;
+                statusEl.textContent = `Správně! 🎉 (Slyšel jsem: ${cleanText})`;
                 nextNumber();
             }
         };
 
-        // Pokud mikrofon z nějakého důvodu vypadne, nahodíme ho zpět
+        // Automatický restart mikrofonu při výpadku nebo změně jazyka
         recognition.onend = () => {
             if (gameActive) {
+                recognition.lang = langSelect.value;
                 recognition.start();
             }
         };
 
         recognition.onerror = (event) => {
-            console.error("Chyba rozpoznávání: ", event.error);
+            if (event.error !== 'no-speech') {
+                console.error("Chyba rozpoznávání: ", event.error);
+            }
         };
     }
 </script>
