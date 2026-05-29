@@ -829,10 +829,10 @@
 
     function startSoloBotAI() {
         const diff = document.getElementById('difficulty-select').value;
-        let tickTime = 4000; let jumpChance = 0.55; let tripChance = 0.15;
+        let tickTime = 5000; let jumpChance = 0.60; let tripChance = 0.15;
 
-        if (diff === 'easy') { tickTime = 5000; jumpChance = 0.35; tripChance = 0.30; }
-        else if (diff === 'hard') { tickTime = 2700; jumpChance = 0.75; tripChance = 0.05; }
+        if (diff === 'easy') { tickTime = 6000; jumpChance = 0.40; tripChance = 0.15; }
+        else if (diff === 'hard') { tickTime = 4000; jumpChance = 0.80; tripChance = 0.05; }
 
         botInterval = setInterval(() => {
             if (!gameStarted || remotePlayers['bot'].lives <= 0 || myState.state === 'won') return;
