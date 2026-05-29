@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hra s čísly a hlasem</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            text-align: center;
+            background-color: #f4f7f6;
+            color: #333;
+            margin-top: 50px;
+        }
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        #number {
+            font-size: 96px;
+            font-weight: bold;
+            color: #2ecc71;
+            margin: 20px 0;
+            transition: transform 0.2s;
+        }
+        #score {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        #status {
+            font-style: italic;
+            color: #7f8c8d;
+            min-height: 24px;
+        }
+        button {
+            padding: 12px 25px;
+            font-size: 18px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Řekni číslo!</h1>
+    <div id="score">Skóre: <strong id="score-val">0</strong></div>
+    <div id="number">-</div>
+    <p id="status">Klikni na tlačítko a povol mikrofon.</p>
+    <button id="start-btn">Spustit hru</button>
+</div>
+
+<script>
+    let score = 0;
+    let currentNumber = 0;
+    let gameActive = false;
+
+    const numberEl = document.getElementById('number');
+    const scoreEl = document.getElementById('score-val');
+    const statusEl = document.getElementById('status');
+    const startBtn = document.getElementById('start-btn');
+
+    // Kontrola, zda prohlížeč podporuje rozpoznávání hlasu
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    
+    if (!SpeechRecognition) {
+        statusEl.textContent = "Tvůj prohlížeč nepodporuje rozpoznávání hlasu. Zkus Chrome nebo Edge.";
+        startBtn.disabled = true;
+    } else {
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'cs-CZ'; // Nastavení češtiny
+        recognition.continuous = true; // Nepřestane poslouchat po jednom slovu
+        recognition.interimResults = false; // Chceme jen finální výsledky
+
+        // Generování nového čísla (1 až 10)
+        function nextNumber() {
+            currentNumber = Math.floor(Math.random() * 10) + 1;
+            numberEl.textContent = currentNumber;
+            // Drobný vizuální efekt
+            numberEl.style.transform = "scale(1.1)";
+            setTimeout(() => numberEl.style.transform = "scale(1)", 200);
+        }
+
+        // Spuštění hry po kliknutí
+        startBtn.addEventListener('click', () => {
+            if (!gameActive) {
+                recognition.start();
+                gameActive = true;
+                startBtn.style.display = 'none';
+                statusEl.textContent = "Poslouchám... Řekni číslo na obrazovce.";
+                nextNumber();
+            }
+        });
+
+        // Zpracování výsledku z mikrofonu
+        recognition.onresult = (event) => {
+            // Získáme poslední vyřčené slovo/číslo
+            const lastResultIndex = event.results.length - 1;
+            const textFromServer = event.results[lastResultIndex][0].transcript.trim();
+            
+            statusEl.textContent = `Slyšel jsem: "${textFromServer}"`;
+
+            // Porovnání (převedeme text na číslo, pokud to jde)
+            if (textFromServer == currentNumber) {
+                score++;
+                scoreEl.textContent = score;
+                statusEl.textContent = `Správně! 🎉 (Slyšel jsem: ${textFromServer})`;
+                nextNumber();
+            }
+        };
+
+        // Pokud mikrofon z nějakého důvodu vypadne, nahodíme ho zpět
+        recognition.onend = () => {
+            if (gameActive) {
+                recognition.start();
+            }
+        };
+
+        recognition.onerror = (event) => {
+            console.error("Chyba rozpoznávání: ", event.error);
+        };
+    }
+</script>
+
+</body>
+</html>
