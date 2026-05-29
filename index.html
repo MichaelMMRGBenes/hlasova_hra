@@ -55,18 +55,22 @@
             border: 1px solid #fff;
         }
         #number-display {
-            font-size: 75px;
+            font-size: 50px;
             font-weight: bold;
             color: #2c3e50;
             margin: 10px 0;
             background: #edf2f7;
             border-radius: 10px;
-            padding: 3px;
+            padding: 10px;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         canvas {
             width: 100%;
             height: auto;
-            background-color: #27ae60;
+            background-color: #2ecc71;
             border: 4px solid #2c3e50;
             border-radius: 10px;
             display: block;
@@ -120,7 +124,7 @@
     </div>
 
     <div id="screen-main" class="screen active">
-        <h2>Hlasový Závod: Velká Přetahovaná</h2>
+        <h2>Hlasový Závod: Společná Dráha</h2>
         <div style="display: flex; gap: 15px; justify-content: center; margin-top: 30px;">
             <button id="main-choose-solo" class="btn-large" style="width: 240px;">🏃 Hrát sám (Proti PC)</button>
             <button id="main-choose-online" class="btn-large" style="background-color: #9b59b6; width: 240px;">🌐 Online Multiplayer</button>
@@ -130,23 +134,37 @@
     <div id="screen-solo-setup" class="screen">
         <h2>Nastavení Solo hry</h2>
         <div class="menu-card">
-            <p><label>Obtížnost AI bota: </label>
+            <p><label>Obtížnost AI: </label>
             <select id="difficulty-select">
                 <option value="easy">Lehká (Pomalé AI)</option>
                 <option value="medium" selected>Střední (Vyvážená)</option>
                 <option value="hard">Těžká (Férová výzva)</option>
             </select></p>
+
+            <p><label>Mód hry: </label>
+            <select id="game-mode-type-solo">
+                <option value="classic">Klasický (Číslice -> Slovo)</option>
+                <option value="translation" selected>Tlumočení (Hlas A -> Hlasová odpověď B)</option>
+            </select></p>
             
-            <p><label>Jazyk tréninku: </label>
-            <select id="lang-select-solo">
+            <p id="solo-lang-a-box"><label>Jazyk A (Kterým hra mluví): </label>
+            <select id="lang-select-solo-a">
+                <option value="en-US" selected>English</option>
                 <option value="cs-CZ">Čeština</option>
-                <option value="en-US">English</option>
                 <option value="de-DE">Deutsch</option>
                 <option value="fr-FR">Français</option>
                 <option value="fi-FI">Suomi</option>
             </select></p>
+
+            <p id="solo-lang-b-box"><label>Jazyk B (Kterým odpovídáš ty): </label>
+            <select id="lang-select-solo-b">
+                <option value="fi-FI" selected>Suomi</option>
+                <option value="cs-CZ">Čeština</option>
+                <option value="en-US">English</option>
+                <option value="de-DE">Deutsch</option>
+            </select></p>
             <br>
-            <button id="solo-start-game-btn" class="btn-success btn-large">Vstoupit na trať</button>
+            <button id="solo-start-game-btn" class="btn-success btn-large">Vstoupit na stadion</button>
         </div>
         <button class="btn-secondary" onclick="changeScreen('screen-main')">← Zpět</button>
     </div>
@@ -169,22 +187,30 @@
                 <option value="2">2 Hráči (Duel)</option>
                 <option value="3">3 Hráči</option>
                 <option value="4">4 Hráči</option>
-                <option value="5">5 Hráčů</option>
-                <option value="6">6 Hráčů</option>
-                <option value="7">7 Hráčů</option>
-                <option value="8">8 Hráčů</option>
             </select></p>
 
-            <p><label>Jazyk pro celou místnost: </label>
-            <select id="lang-select-online">
+            <p><label>Mód hry: </label>
+            <select id="game-mode-type-online">
+                <option value="classic">Klasický (Číslice -> Slovo)</option>
+                <option value="translation" selected>Tlumočení (Hlas A -> Hlasová odpověď B)</option>
+            </select></p>
+
+            <p id="online-lang-a-box"><label>Jazyk A (Hlasové zadání): </label>
+            <select id="lang-select-online-a">
+                <option value="en-US" selected>English</option>
                 <option value="cs-CZ">Čeština</option>
-                <option value="en-US">English</option>
                 <option value="de-DE">Deutsch</option>
-                <option value="fr-FR">Français</option>
                 <option value="fi-FI">Suomi</option>
             </select></p>
+
+            <p id="online-lang-b-box"><label>Jazyk B (Mluvená odpověď): </label>
+            <select id="lang-select-online-b">
+                <option value="fi-FI" selected>Suomi</option>
+                <option value="cs-CZ">Čeština</option>
+                <option value="en-US">English</option>
+            </select></p>
             <br>
-            <button id="create-room-execute-btn" class="btn-success btn-large">Vytvořit a čekat na lidi</button>
+            <button id="create-room-execute-btn" class="btn-success btn-large">Vytvořit a vygenerovat kód</button>
         </div>
         <button class="btn-secondary" onclick="changeScreen('screen-online-branch')">← Zpět</button>
     </div>
@@ -192,7 +218,7 @@
     <div id="screen-online-join" class="screen">
         <h2>Zadej kód hry</h2>
         <div class="menu-card">
-            <input type="text" id="room-code-input" placeholder="Např. 4821" style="font-size: 20px; text-align: center; width: 180px;">
+            <input type="text" id="room-code-input" placeholder="Kód místnosti" style="font-size: 20px; text-align: center; width: 180px;">
             <br><br>
             <button id="join-room-execute-btn" class="btn-large" style="background-color: #e67e22;">Vstoupit do místnosti</button>
         </div>
@@ -204,7 +230,7 @@
         <div id="hud-players-container" class="hud-container"></div>
 
         <div id="number-display">-</div>
-        <canvas id="game-canvas" width="600" height="520"></canvas>
+        <canvas id="game-canvas" width="650" height="320"></canvas>
         <p id="status">Připrav se...</p>
         <button id="start-match-btn" class="btn-success btn-large" style="display:none;">START ZÁVODU</button>
     </div>
@@ -249,21 +275,17 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // --- RENDER CONFIGURATION ---
+    // --- RENDER & GAMEPLAY CONFIG ---
     const canvas = document.getElementById('game-canvas');
     const ctx = canvas.getContext('2d');
     
-    const BASE_X = 220; 
-    const STEP_X = 85;  
-    
-    // Fixní pozice překážek na trati, aby lícovaly s krokem běžců
-    const staticHurdlePositions = [92, 177, 262, 347, 432, 517];
+    const START_WORLD_X = 120;
+    const STEP_X = 110;       
+    const FINISH_LINE_WORLD_X = START_WORLD_X + (10 * STEP_X);
 
-    const playerColors = [
-        "#3498db", "#e74c3c", "#9b59b6", "#e67e22", 
-        "#1abc9c", "#f1c40f", "#34495e", "#7f8c8d"
-    ];
+    const playerColors = ["#3498db", "#e74c3c", "#9b59b6", "#e67e22"];
 
+    // Slovní mapování pro řečové porovnávání (Jazyk B)
     const languageMaps1To10 = {
         'cs-CZ': { 1: ['1', 'jeden', 'jedna'], 2: ['2', 'dva'], 3: ['3', 'tři'], 4: ['4', 'čtyři'], 5: ['5', 'pět'], 6: ['6', 'šest'], 7: ['7', 'sedm'], 8: ['8', 'osm'], 9: ['9', 'devět'], 10: ['10', 'deset'] },
         'en-US': { 1: ['1', 'one'], 2: ['2', 'two'], 3: ['3', 'three'], 4: ['4', 'four'], 5: ['5', 'five'], 6: ['6', 'six'], 7: ['7', 'seven'], 8: ['8', 'eight'], 9: ['9', 'nine'], 10: ['10', 'ten'] },
@@ -272,15 +294,28 @@
         'fi-FI': { 1: ['1', 'yksi'], 2: ['2', 'kaksi'], 3: ['3', 'kolme'], 4: ['4', 'neljä'], 5: ['5', 'viisi'], 6: ['6', 'kuusi'], 7: ['7', 'seitsemän'], 8: ['8', 'kahdeksan'], 9: ['9', 'yhdeksän'], 10: ['10', 'kymmenen'] }
     };
 
+    // Textové podklady pro generování řeči (Jazyk A)
+    const languageWordsText = {
+        'cs-CZ': ["", "jeden", "dva", "tři", "čtyři", "pět", "šest", "sedm", "osm", "devět", "deset"],
+        'en-US': ["", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"],
+        'de-DE': ["", "eins", "zwei", "drei", "vier", "fünf", "sechs", "sieben", "acht", "neun", "zehn"],
+        'fr-FR': ["", "un", "deux", "trois", "quatre", "cinq", "six", "sept", "huit", "neuf", "dix"],
+        'fi-FI': ["", "yksi", "kaksi", "kolme", "neljä", "viisi", "kuusi", "seitsemän", "kahdeksan", "yhdeksän", "kymmenen"]
+    };
+
     // --- GLOBÁLNÍ STAV ---
     let gameMode = 'solo'; 
+    let currentModeType = 'translation'; 
+    let langA = 'en-US';
+    let langB = 'fi-FI';
+
     let roomRef = null;
     let myRole = 'p1'; 
     let maxPlayersInRoom = 2;
     let botInterval = null;
-    let activeLanguage = 'cs-CZ';
+    let lastSpokenNumber = 0; // Hlídá, aby se jedno zadání nečetlo pořád dokola
 
-    let myState = { score: 0, lives: 3, currentNumber: 0, state: 'running', y: 0, jumpProgress: 0, name: "Běžec" };
+    let myState = { score: 0, lives: 3, currentNumber: 0, state: 'running', y: 0, jumpProgress: 0, worldX: START_WORLD_X, name: "Běžec" };
     let remotePlayers = {}; 
     let gameStarted = false;
 
@@ -289,24 +324,29 @@
     const startMatchBtn = document.getElementById('start-match-btn');
     const hudContainer = document.getElementById('hud-players-container');
 
-    // --- HLASOVÁ REKOGNICE (ZRYCHLENÁ POMOCÍ INTERIM RESULTS) ---
+    // Dynamické skrytí/zobrazení volby podle módu
+    document.getElementById('game-mode-type-solo').addEventListener('change', (e) => {
+        document.getElementById('solo-lang-b-box').style.display = (e.target.value === 'translation') ? 'block' : 'none';
+    });
+    document.getElementById('game-mode-type-online').addEventListener('change', (e) => {
+        document.getElementById('online-lang-b-box').style.display = (e.target.value === 'translation') ? 'block' : 'none';
+    });
+
+    // --- HLASOVÁ REKOGNICE (JAZYK B) ---
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     let recognition = null;
     if (SpeechRecognition) {
         recognition = new SpeechRecognition();
         recognition.continuous = true;
-        recognition.interimResults = true; // Zpracování v reálném čase během mluvení!
+        recognition.interimResults = true; 
         
         recognition.onresult = (e) => {
             if (!gameStarted || myState.state !== 'running' || myState.lives <= 0) return;
-            
-            // Prohledáme aktuální dávku průběžného textu ze vstupu
             let fullTranscript = '';
             for (let i = e.resultIndex; i < e.results.length; ++i) {
                 fullTranscript += e.results[i][0].transcript;
             }
-            
-            handleLiveVoice(fullTranscript);
+            handleLiveVoiceInput(fullTranscript);
         };
         
         recognition.onend = () => { 
@@ -314,121 +354,131 @@
         };
     }
 
+    // --- TEXT-TO-SPEECH FUNKCE (JAZYK A) ---
+    function speakTargetNumber(num, lang) {
+        if (!window.speechSynthesis) return;
+        window.speechSynthesis.cancel(); // Okamžitě utne předchozí mluvení
+
+        let textToSpeak = "";
+        if (currentModeType === 'translation') {
+            textToSpeak = languageWordsText[lang][num] || num.toString();
+        } else {
+            textToSpeak = num.toString();
+        }
+
+        const utterance = new SpeechSynthesisUtterance(textToSpeak);
+        utterance.lang = lang;
+        utterance.rate = 0.9; // Mírně pomalejší tempo pro čistou artikulaci
+        window.speechSynthesis.speak(utterance);
+    }
+
     function changeScreen(screenId) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(screenId).classList.add('active');
         
-        // Zobrazovat box pro jméno pouze v menu strukturách
-        if(screenId === 'screen-game' || screenId === 'screen-victory') {
+        if(['screen-game', 'screen-victory'].includes(screenId)) {
             document.getElementById('global-profile-box').style.display = 'none';
         } else {
             document.getElementById('global-profile-box').style.display = 'block';
         }
-        
         if(screenId !== 'screen-game') resetGameEngine();
     }
 
     function resetGameEngine() {
         gameStarted = false;
+        lastSpokenNumber = 0;
         if(recognition) try { recognition.stop(); } catch(e){}
+        if(window.speechSynthesis) window.speechSynthesis.cancel();
         if(botInterval) clearInterval(botInterval);
         if(roomRef) roomRef.off();
         
         let chosenName = document.getElementById('player-name-input').value.trim() || "Běžec";
-        myState = { score: 0, lives: 3, currentNumber: 0, state: 'running', y: 0, jumpProgress: 0, name: chosenName };
+        myState = { score: 0, lives: 3, currentNumber: 0, state: 'running', y: 0, jumpProgress: 0, worldX: START_WORLD_X, name: chosenName };
         remotePlayers = {};
         document.getElementById('replay-section').style.display = 'none';
     }
 
-    // --- LOGIKA PRŮCHODU MENU ---
     document.getElementById('main-choose-solo').addEventListener('click', () => changeScreen('screen-solo-setup'));
     document.getElementById('main-choose-online').addEventListener('click', () => changeScreen('screen-online-branch'));
     document.getElementById('online-go-create').addEventListener('click', () => changeScreen('screen-online-create'));
     document.getElementById('online-go-join').addEventListener('click', () => changeScreen('screen-online-join'));
 
-    // SPÁLENÍ SÓLO HRY
+    // START SÓLO
     document.getElementById('solo-start-game-btn').addEventListener('click', () => {
-        gameMode = 'solo';
-        myRole = 'p1';
-        activeLanguage = document.getElementById('lang-select-solo').value;
+        gameMode = 'solo'; myRole = 'p1';
+        currentModeType = document.getElementById('game-mode-type-solo').value;
+        langA = document.getElementById('lang-select-solo-a').value;
+        langB = (currentModeType === 'translation') ? document.getElementById('lang-select-solo-b').value : langA;
+        
         myState.name = document.getElementById('player-name-input').value.trim() || "Ty";
-
-        remotePlayers['bot'] = { score: 0, lives: 3, state: 'running', y: 0, jumpProgress: 0, name: "Počítač (AI)" };
+        remotePlayers['bot'] = { score: 0, lives: 3, state: 'running', y: 0, jumpProgress: 0, worldX: START_WORLD_X, name: "Počítač (AI)" };
         
         changeScreen('screen-game');
-        document.getElementById('room-id-display').textContent = `Solo Trénink [Obtížnost: ${document.getElementById('difficulty-select').value.toUpperCase()}]`;
+        document.getElementById('room-id-display').textContent = `Solo: ${currentModeType.toUpperCase()}`;
         startMatchBtn.style.display = 'inline-block';
-        statusEl.textContent = "Připraven ke startu.";
+        statusEl.textContent = "Připraven u startovní čáry.";
         renderHUD();
     });
 
-    // MULTIPLAYER ZALOŽENÍ
+    // ONLINE CREATE
     document.getElementById('create-room-execute-btn').addEventListener('click', () => {
         gameMode = 'online';
         const code = Math.floor(1000 + Math.random() * 9000).toString();
         maxPlayersInRoom = parseInt(document.getElementById('player-count-select').value);
-        activeLanguage = document.getElementById('lang-select-online').value;
-        myRole = 'p1';
-        myState.name = document.getElementById('player-name-input').value.trim() || "Hostitel";
+        currentModeType = document.getElementById('game-mode-type-online').value;
+        langA = document.getElementById('lang-select-online-a').value;
+        langB = (currentModeType === 'translation') ? document.getElementById('lang-select-online-b').value : langA;
+        
+        myRole = 'p1'; myState.name = document.getElementById('player-name-input').value.trim() || "Hostitel";
         
         roomRef = db.ref('rooms/' + code);
-        let initialRoomData = {
-            status: 'waiting',
-            maxPlayers: maxPlayersInRoom,
-            language: activeLanguage,
-            p1: { score: 0, lives: 3, state: 'running', currentNumber: 0, jumpProgress: 0, name: myState.name }
-        };
+        roomRef.set({
+            status: 'waiting', maxPlayers: maxPlayersInRoom, modeType: currentModeType, langA: langA, langB: langB,
+            p1: { score: 0, lives: 3, state: 'running', currentNumber: 0, jumpProgress: 0, worldX: START_WORLD_X, name: myState.name }
+        });
         
-        roomRef.set(initialRoomData);
         changeScreen('screen-game');
-        document.getElementById('room-id-display').textContent = `Kód místnosti: ${code}`;
-        statusEl.textContent = `Místnost vytvořena. Čeká se na naplnění kapacity (${maxPlayersInRoom} hráčů)...`;
+        document.getElementById('room-id-display').textContent = `Místnost: ${code}`;
+        statusEl.textContent = `Čeká se na soupeře (${maxPlayersInRoom})...`;
         listenToRoom();
     });
 
-    // MULTIPLAYER PŘIPOJENÍ
+    // ONLINE JOIN
     document.getElementById('join-room-execute-btn').addEventListener('click', () => {
         gameMode = 'online';
         const code = document.getElementById('room-code-input').value.trim();
         if(!code) return;
 
-        let chosenName = document.getElementById('player-name-input').value.trim() || "Host";
-
+        let chosenName = document.getElementById('player-name-input').value.trim() || "Závodník";
         roomRef = db.ref('rooms/' + code);
         roomRef.once('value', (snap) => {
             const data = snap.val();
             if(!data) { alert("Místnost neexistuje!"); return; }
-            if(data.status === 'playing' || data.status === 'finished') { alert("Závod již běží!"); return; }
+            if(data.status === 'playing' || data.status === 'finished') { alert("Závod už odstartoval!"); return; }
             
             let activeKeys = Object.keys(data).filter(k => k.startsWith('p'));
             if(activeKeys.length >= data.maxPlayers) { alert("Místnost je plná!"); return; }
 
-            let nextIndex = activeKeys.length + 1;
-            myRole = 'p' + nextIndex;
-            myState.name = chosenName;
-            activeLanguage = data.language; // Automatické převzetí nastaveného jazyka místnosti
+            myRole = 'p' + (activeKeys.length + 1); myState.name = chosenName;
+            currentModeType = data.modeType || 'classic'; langA = data.langA; langB = data.langB;
 
             let updates = {};
-            updates[myRole] = { score: 0, lives: 3, state: 'running', currentNumber: 0, jumpProgress: 0, name: myState.name };
-            
-            if(activeKeys.length + 1 === data.maxPlayers) {
-                updates['status'] = 'ready';
-            }
+            updates[myRole] = { score: 0, lives: 3, state: 'running', currentNumber: 0, jumpProgress: 0, worldX: START_WORLD_X, name: myState.name };
+            if(activeKeys.length + 1 === data.maxPlayers) updates['status'] = 'ready';
 
-            roomRef.update(updates);
-            changeScreen('screen-game');
-            document.getElementById('room-id-display').textContent = `Kód místnosti: ${code}`;
+            roomRef.update(updates); changeScreen('screen-game');
+            document.getElementById('room-id-display').textContent = `Místnost: ${code}`;
             listenToRoom();
         });
     });
 
     function listenToRoom() {
         roomRef.on('value', (snap) => {
-            const data = snap.val();
-            if(!data) return;
+            const data = snap.val(); if(!data) return;
 
             maxPlayersInRoom = data.maxPlayers;
-            activeLanguage = data.language || 'cs-CZ';
+            currentModeType = data.modeType || 'classic';
+            langA = data.langA; langB = data.langB;
             
             let keys = Object.keys(data).filter(k => k.startsWith('p'));
             remotePlayers = {};
@@ -437,20 +487,17 @@
                 else if(gameStarted) myState.currentNumber = data[myRole].currentNumber;
             });
 
-            renderHUD();
-            checkWinConditions();
+            renderHUD(); checkWinConditions();
 
             if (data.status === 'ready' && !gameStarted) {
                 if (myRole === 'p1') {
                     startMatchBtn.style.display = 'inline-block';
-                    statusEl.textContent = "Všichni jsou připojeni! Můžeš odstartovat zápas.";
+                    statusEl.textContent = "Všichni jsou tady. Odstartuj závod!";
                 } else {
-                    statusEl.textContent = "Místnost je plná. Čekej na start od zakladatele...";
+                    statusEl.textContent = "Čekej, až zakladatel spustí závod...";
                 }
             }
-            if (data.status === 'playing' && !gameStarted) {
-                executeStart();
-            }
+            if (data.status === 'playing' && !gameStarted) executeStart();
         });
     }
 
@@ -479,43 +526,38 @@
             let keys = [myRole, ...Object.keys(remotePlayers)];
             let updates = { status: 'playing' };
             keys.forEach(k => {
-                updates[k + '/currentNumber'] = Math.floor(Math.random() * 50) + 1;
+                updates[k + '/currentNumber'] = Math.floor(Math.random() * (currentModeType === 'translation' ? 10 : 50)) + 1;
             });
             roomRef.update(updates);
         }
     });
 
+    function getRandomTargetNumber() {
+        return Math.floor(Math.random() * (currentModeType === 'translation' ? 10 : 50)) + 1;
+    }
+
     function executeStart() {
         gameStarted = true;
         startMatchBtn.style.display = 'none';
-        statusEl.textContent = "Běž! Odpověz co nejrychleji.";
+        statusEl.textContent = "BĚŽ!!!";
         
         if (gameMode === 'solo') {
-            myState.currentNumber = Math.floor(Math.random() * 10) + 1;
+            myState.currentNumber = getRandomTargetNumber();
             startSoloBotAI();
         }
-
         if (recognition) {
-            recognition.lang = activeLanguage;
+            recognition.lang = langB; // Rozpoznávání řeči poslouchá tvou cílovou odpověď
             recognition.start();
         }
         requestAnimationFrame(gameLoop);
     }
 
-    // --- VYVÁŽENÉ A HRATELNÉ HRANICE TĚŽKÉHO AI BOTU ---
     function startSoloBotAI() {
         const diff = document.getElementById('difficulty-select').value;
-        let tickTime = 4500;
-        let jumpChance = 0.60;
-        let tripChance = 0.15;
+        let tickTime = 4000; let jumpChance = 0.55; let tripChance = 0.15;
 
-        if (diff === 'easy') {
-            tickTime = 6000; jumpChance = 0.40; tripChance = 0.25;
-        } else if (diff === 'hard') {
-            tickTime = 4000;    // Zpomaleno z 2.2s (Bota lze nyní čistým během porazit!)
-            jumpChance = 0.75;  // Úspěšnost snížena z 85% na 75%
-            tripChance = 0.08;  // Zvýšena šance na drobnou lidskou chybu bota
-        }
+        if (diff === 'easy') { tickTime = 5000; jumpChance = 0.35; tripChance = 0.30; }
+        else if (diff === 'hard') { tickTime = 2900; jumpChance = 0.73; tripChance = 0.08; }
 
         botInterval = setInterval(() => {
             if (!gameStarted || remotePlayers['bot'].lives <= 0 || myState.state === 'won') return;
@@ -523,56 +565,45 @@
             let roll = Math.random();
             if (roll < jumpChance) {
                 remotePlayers['bot'].state = 'jumping';
-                let bFrame = 0;
-                const bTotalFrames = 30;
+                let bFrame = 0; const bTotalFrames = 30;
+                let startX = remotePlayers['bot'].worldX;
 
                 let bJmp = setInterval(() => {
                     bFrame++;
                     let progress = bFrame / bTotalFrames;
                     remotePlayers['bot'].jumpProgress = progress;
-                    remotePlayers['bot'].y = -(4 * 65 * progress * (1 - progress));
-                    
+                    remotePlayers['bot'].y = -(4 * 60 * progress * (1 - progress));
+                    remotePlayers['bot'].worldX = startX + (progress * STEP_X);
+
                     if(bFrame >= bTotalFrames) {
                         clearInterval(bJmp);
-                        remotePlayers['bot'].state = 'running';
-                        remotePlayers['bot'].y = 0;
-                        remotePlayers['bot'].jumpProgress = 0;
+                        remotePlayers['bot'].state = 'running'; remotePlayers['bot'].y = 0; remotePlayers['bot'].jumpProgress = 0;
                         remotePlayers['bot'].score++;
-                        renderHUD();
-                        checkWinConditions();
+                        remotePlayers['bot'].worldX = startX + STEP_X;
+                        renderHUD(); checkWinConditions();
                     }
                 }, 20);
             } else if (roll > (1 - tripChance)) {
-                remotePlayers['bot'].state = 'tripping';
-                remotePlayers['bot'].lives--;
-                renderHUD();
-                checkWinConditions();
-                setTimeout(() => { 
-                    if(remotePlayers['bot'] && remotePlayers['bot'].lives > 0) remotePlayers['bot'].state = 'running'; 
-                }, 1200);
+                remotePlayers['bot'].state = 'tripping'; remotePlayers['bot'].lives--;
+                renderHUD(); checkWinConditions();
+                setTimeout(() => { if(remotePlayers['bot'] && remotePlayers['bot'].lives > 0) remotePlayers['bot'].state = 'running'; }, 1200);
             }
         }, tickTime);
     }
 
     function checkWinConditions() {
         if (!gameStarted) return;
-
         let all = [{ id: myRole, ...myState }];
         Object.keys(remotePlayers).forEach(k => all.push({ id: k, ...remotePlayers[k] }));
 
         let alivePlayers = all.filter(p => p.lives > 0);
         let winnerId = null;
 
-        if (alivePlayers.length === 1) {
+        let reachedFinish = all.filter(p => p.worldX >= FINISH_LINE_WORLD_X && p.lives > 0);
+        if(reachedFinish.length > 0) {
+            reachedFinish.sort((a,b) => b.worldX - a.worldX); winnerId = reachedFinish[0].id;
+        } else if (alivePlayers.length === 1 && all.length > 1) {
             winnerId = alivePlayers[0].id;
-        } else if (alivePlayers.length > 1) {
-            all.forEach(p => {
-                let opponents = all.filter(o => o.id !== p.id);
-                let maxOpponentScore = Math.max(...opponents.map(o => o.score));
-                if (p.score - maxOpponentScore >= 4) {
-                    winnerId = p.id;
-                }
-            });
         }
 
         if (winnerId) {
@@ -585,24 +616,23 @@
     function showVictoryScreen(winnerId, allPlayersList) {
         if(botInterval) clearInterval(botInterval);
         if(recognition) try { recognition.stop(); } catch(e){}
+        if(window.speechSynthesis) window.speechSynthesis.cancel();
 
         const titleEl = document.getElementById('victory-title');
         const tbody = document.getElementById('stats-tbody');
         tbody.innerHTML = "";
 
         if (winnerId === myRole) {
-            titleEl.textContent = "🎉 Vítězství! Skvělý závod! 🎉";
-            titleEl.style.color = "#2ecc71";
+            titleEl.textContent = "🎉 Zvítězil jsi! Skvělý běh! 🎉"; titleEl.style.color = "#2ecc71";
         } else {
             let winnerName = remotePlayers[winnerId] ? remotePlayers[winnerId].name : "Soupeř";
-            titleEl.textContent = `💀 Konec! Vyhrál ${winnerName}! 💀`;
-            titleEl.style.color = "#e74c3c";
+            titleEl.textContent = `💀 Vítězem se stává: ${winnerName} 💀`; titleEl.style.color = "#e74c3c";
         }
 
         allPlayersList.sort((a,b) => b.score - a.score).forEach(p => {
             let tr = document.createElement('tr');
             let displayName = p.id === myRole ? `<b>${p.name} (Ty)</b>` : p.name;
-            let statusText = p.id === winnerId ? "🥇 VÍTĚZ" : (p.lives <= 0 ? "❌ KO" : "🥈 Poražen");
+            let statusText = p.id === winnerId ? "🥇 VÍTĚZ" : (p.lives <= 0 ? "❌ KO" : "🥈 Dokončil");
             tr.innerHTML = `<td>${displayName}</td><td>${p.score}</td><td>${p.lives}/3</td><td>${statusText}</td>`;
             tbody.appendChild(tr);
         });
@@ -612,108 +642,86 @@
     }
 
     document.getElementById('rematch-btn').addEventListener('click', () => {
-        let currentModeSaved = gameMode;
-        resetGameEngine();
-        if (currentModeSaved === 'solo') {
-            gameMode = 'solo';
-            myRole = 'p1';
+        let savedMode = gameMode; resetGameEngine();
+        if (savedMode === 'solo') {
+            gameMode = 'solo'; myRole = 'p1';
             myState.name = document.getElementById('player-name-input').value.trim() || "Ty";
-            remotePlayers['bot'] = { score: 0, lives: 3, state: 'running', y: 0, jumpProgress: 0, name: "Počítač (AI)" };
-            changeScreen('screen-game');
-            startMatchBtn.style.display = 'inline-block';
-            statusEl.textContent = "Nový zápas připraven.";
-            renderHUD();
+            remotePlayers['bot'] = { score: 0, lives: 3, state: 'running', y: 0, jumpProgress: 0, worldX: START_WORLD_X, name: "Počítač (AI)" };
+            changeScreen('screen-game'); startMatchBtn.style.display = 'inline-block';
+            statusEl.textContent = "Zápas restartován."; renderHUD();
         } else if (roomRef) {
             gameMode = 'online';
             if (myRole === 'p1') {
-                let resetData = { status: 'ready', maxPlayers: maxPlayersInRoom, language: activeLanguage };
-                resetData[myRole] = { score: 0, lives: 3, state: 'running', currentNumber: 0, jumpProgress: 0, name: myState.name };
-                roomRef.set(resetData);
+                roomRef.set({ status: 'ready', maxPlayers: maxPlayersInRoom, modeType: currentModeType, langA: langA, langB: langB,
+                    p1: { score: 0, lives: 3, state: 'running', currentNumber: 0, jumpProgress: 0, worldX: START_WORLD_X, name: myState.name }
+                });
             }
-            changeScreen('screen-game');
-            listenToRoom();
+            changeScreen('screen-game'); listenToRoom();
         }
     });
 
-    // --- REÁLNÝ ČAS ANALÝZY HLASU (DOPŘEDNÉ VYHODNOCENÍ) ---
-    function handleLiveVoice(rawText) {
+    // REÁLNÝ ČAS DETEKCE ODPOVĚDI
+    function handleLiveVoiceInput(rawText) {
         const cleanText = rawText.toLowerCase().replace(/[.,?!]/g, '').trim();
-        statusEl.textContent = `Slyším průběžně: "${cleanText}"`;
+        statusEl.textContent = `Slyším: "${cleanText}"`;
 
         let matched = false;
         if (myState.currentNumber <= 10) {
-            const validAnswers = languageMaps1To10[activeLanguage][myState.currentNumber];
-            // Ověříme, zda se v řečeném řetězci nachází jedno z validních slov
-            if (validAnswers && validAnswers.some(ans => cleanText.includes(ans))) {
-                matched = true;
-            }
+            const validAnswers = languageMaps1To10[langB][myState.currentNumber];
+            if (validAnswers && validAnswers.some(ans => cleanText.includes(ans))) matched = true;
         } else {
-            if (cleanText.includes(myState.currentNumber.toString())) {
-                matched = true;
-            }
+            if (cleanText.includes(myState.currentNumber.toString())) matched = true;
         }
 
-        if (matched) {
-            triggerJump();
-        }
+        if (matched) triggerJump();
     }
 
-    // ZÁLOŽNÍ CHYBOVÝ FINIŠER (Když se uživatel odmlčí a nic netrefil)
     if (SpeechRecognition) {
         recognition.onspeechend = () => {
             setTimeout(() => {
-                // Pokud uživatel domluvil a kód stále visí v běžném běhu, bereme to jako nesprávný pokus (zakopnutí)
                 if (gameStarted && myState.state === 'running' && myState.lives > 0) {
                     triggerTrip();
                 }
-            }, 600);
+            }, 800);
         };
     }
 
     function triggerJump() {
-        myState.state = 'jumping';
-        myState.jumpProgress = 0;
+        myState.state = 'jumping'; myState.jumpProgress = 0;
         sendStateToFirebase();
 
-        let frame = 0;
-        const totalFrames = 30; // 600 milisekund trvání letu nad překážkou
+        let frame = 0; const totalFrames = 30;
+        let startWorldX = myState.worldX;
 
         const jumpInterval = setInterval(() => {
-            frame++;
-            let progress = frame / totalFrames;
+            frame++; let progress = frame / totalFrames;
             myState.jumpProgress = progress;
+            myState.y = -(4 * 60 * progress * (1 - progress));
+            myState.worldX = startWorldX + (progress * STEP_X);
             
-            // Křivka paraboly
-            myState.y = -(4 * 65 * progress * (1 - progress));
             sendStateToFirebase();
 
             if (frame >= totalFrames) {
                 clearInterval(jumpInterval);
-                myState.state = 'running';
-                myState.y = 0;
-                myState.jumpProgress = 0;
+                myState.state = 'running'; myState.y = 0; myState.jumpProgress = 0;
+                myState.worldX = startWorldX + STEP_X;
                 
                 myState.score++;
-                myState.currentNumber = Math.floor(Math.random() * 50) + 1;
+                myState.currentNumber = getRandomTargetNumber();
                 
-                sendStateToFirebase();
-                renderHUD();
-                checkWinConditions();
+                sendStateToFirebase(); renderHUD(); checkWinConditions();
             }
         }, 20);
     }
 
     function triggerTrip() {
-        myState.state = 'tripping';
-        myState.lives--;
-        sendStateToFirebase();
-        renderHUD();
-        checkWinConditions();
-
+        myState.state = 'tripping'; myState.lives--;
+        if(window.speechSynthesis) window.speechSynthesis.cancel(); // Při zakopnutí ztichne
+        sendStateToFirebase(); renderHUD(); checkWinConditions();
         setTimeout(() => {
             if (myState.lives > 0 && gameStarted) {
                 myState.state = 'running';
-                myState.currentNumber = Math.floor(Math.random() * 50) + 1;
+                myState.currentNumber = getRandomTargetNumber();
                 sendStateToFirebase();
             }
         }, 1200);
@@ -722,81 +730,44 @@
     function sendStateToFirebase() {
         if (gameMode === 'online' && roomRef) {
             roomRef.child(myRole).update({
-                score: myState.score,
-                lives: myState.lives,
-                state: myState.state,
-                y: myState.y,
-                jumpProgress: myState.jumpProgress,
+                score: myState.score, lives: myState.lives, state: myState.state,
+                y: myState.y, jumpProgress: myState.jumpProgress, worldX: myState.worldX,
                 currentNumber: myState.currentNumber
             });
         }
     }
 
-    // --- GRAPHICS ENGINE S SÍTÍ PŘEKÁŽEK ---
+    // --- ENGINE VYKRESLOVÁNÍ DRÁHY ---
     function drawRunner(x, y, color, name, isTripping, isJumping) {
         ctx.save();
         if (isTripping) {
-            ctx.translate(x + 12, y - 10);
-            ctx.rotate(Math.PI / 2);
-            ctx.translate(-(x + 12), -(y - 10));
+            ctx.translate(x + 12, y - 10); ctx.rotate(Math.PI / 2); ctx.translate(-(x + 12), -(y - 10));
         }
-
-        ctx.fillStyle = "rgba(0,0,0,0.18)";
-        ctx.beginPath();
-        ctx.ellipse(x + 12, y, 12, 4, 0, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.fillStyle = "rgba(255,255,255,0.9)";
-        ctx.font = "bold 10px sans-serif";
-        ctx.textAlign = "center";
-        ctx.fillText(name, x + 12, y - 48);
-
-        ctx.fillStyle = "#ffcc99";
-        ctx.beginPath();
-        ctx.arc(x + 12, y - 36, 6, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.fillStyle = color;
-        ctx.beginPath();
-        ctx.roundRect ? ctx.roundRect(x + 3, y - 30, 18, 18, 4) : ctx.fillRect(x + 3, y - 30, 18, 18);
-        ctx.fill();
-
-        ctx.strokeStyle = "#1a1a1a";
-        ctx.lineWidth = 3.5;
-        ctx.lineCap = "round";
-        ctx.beginPath();
-        
+        ctx.fillStyle = "rgba(0,0,0,0.15)"; ctx.beginPath(); ctx.ellipse(x + 12, y, 12, 4, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "rgba(255,255,255,0.9)"; ctx.font = "bold 10px sans-serif"; ctx.textAlign = "center";
+        ctx.fillText(name, x + 12, y - 46);
+        ctx.fillStyle = "#ffcc99"; ctx.beginPath(); ctx.arc(x + 12, y - 34, 6, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = color; ctx.beginPath();
+        ctx.roundRect ? ctx.roundRect(x + 3, y - 28, 18, 16, 4) : ctx.fillRect(x + 3, y - 28, 18, 16); ctx.fill();
+        ctx.strokeStyle = "#1a1a1a"; ctx.lineWidth = 3.5; ctx.lineCap = "round"; ctx.beginPath();
         if (isJumping) {
-            ctx.moveTo(x + 6, y - 12); ctx.lineTo(x + 1, y - 5);
-            ctx.moveTo(x + 18, y - 12); ctx.lineTo(x + 23, y - 5);
+            ctx.moveTo(x + 6, y - 12); ctx.lineTo(x + 2, y - 5); ctx.moveTo(x + 18, y - 12); ctx.lineTo(x + 22, y - 5);
         } else if (isTripping) {
-            ctx.moveTo(x + 7, y - 12); ctx.lineTo(x + 5, y - 2);
-            ctx.moveTo(x + 17, y - 12); ctx.lineTo(x + 15, y - 2);
+            ctx.moveTo(x + 7, y - 12); ctx.lineTo(x + 5, y - 2); ctx.moveTo(x + 17, y - 12); ctx.lineTo(x + 15, y - 2);
         } else {
-            let dynamicLegSwing = Math.sin(Date.now() * 0.015) * 6;
-            ctx.moveTo(x + 7, y - 12); ctx.lineTo(x + 7 + dynamicLegSwing, y);
-            ctx.moveTo(x + 17, y - 12); ctx.lineTo(x + 17 - dynamicLegSwing, y);
+            let legSwing = Math.sin(Date.now() * 0.015) * 6;
+            ctx.moveTo(x + 7, y - 12); ctx.lineTo(x + 7 + legSwing, y);
+            ctx.moveTo(x + 17, y - 12); ctx.lineTo(x + 17 - legSwing, y);
         }
-        ctx.stroke();
-        ctx.restore();
+        ctx.stroke(); ctx.restore();
     }
 
     function drawHurdle(x, y) {
-        ctx.save();
-        ctx.strokeStyle = "#444";
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.moveTo(x - 6, y); ctx.lineTo(x + 16, y);
-        ctx.moveTo(x, y); ctx.lineTo(x, y - 24);
-        ctx.moveTo(x + 10, y); ctx.lineTo(x + 10, y - 24);
+        ctx.save(); ctx.strokeStyle = "#333"; ctx.lineWidth = 3; ctx.beginPath();
+        ctx.moveTo(x - 5, y); ctx.lineTo(x + 15, y); ctx.moveTo(x, y); ctx.lineTo(x, y - 22); ctx.moveTo(x + 10, y); ctx.lineTo(x + 10, y - 22);
         ctx.stroke();
-
-        ctx.fillStyle = "#e74c3c";
-        ctx.fillRect(x - 6, y - 24, 22, 6);
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(x - 1, y - 24, 4, 6);
-        ctx.fillRect(x + 7, y - 24, 4, 6);
-        ctx.restore();
+        ctx.fillStyle = "#e74c3c"; ctx.fillRect(x - 5, y - 22, 20, 5);
+        ctx.fillStyle = "#fff"; ctx.fillRect(x + 3, y - 22, 4, 5); ctx.restore();
     }
 
     function draw() {
@@ -804,62 +775,54 @@
 
         let list = [{ role: myRole, ...myState }];
         Object.keys(remotePlayers).forEach(k => list.push({ role: k, ...remotePlayers[k] }));
-
-        let activeTracksCount = Math.max(2, list.length);
-        let laneHeight = Math.floor(canvas.height / activeTracksCount);
-
         list.sort((a,b) => a.role.localeCompare(b.role));
 
-        // RENDER TRATÍ A FIXNÍCH PŘEKÁŽEK
-        for (let i = 0; i < activeTracksCount; i++) {
-            let laneY = (i * laneHeight) + (laneHeight - 10);
-            
-            ctx.fillStyle = i % 2 === 0 ? "#b35942" : "#9e4e39";
-            ctx.fillRect(0, laneY - 35, canvas.width, 40);
+        let currentVisualX = myState.worldX;
+        let cameraX = currentVisualX - 130; 
+        if(cameraX < 0) cameraX = 0;
 
-            ctx.fillStyle = "#f1c40f";
-            ctx.fillRect(0, laneY - 38, canvas.width, 3);
+        let trackTopY = 120; let trackHeight = 140; let trackBottomY = trackTopY + trackHeight;
 
-            // CÍLOVÁ ČÁRA NA KONCI OBRAZOVKY
-            ctx.fillStyle = "#ffffff";
-            ctx.fillRect(550, laneY - 35, 10, 40);
-            ctx.fillStyle = "#000000";
-            ctx.fillRect(555, laneY - 35, 5, 20);
-            ctx.fillRect(550, laneY - 15, 5, 20);
+        ctx.fillStyle = "#d35400"; ctx.fillRect(0, trackTopY, canvas.width, trackHeight);
+        ctx.fillStyle = "#ffffff"; ctx.fillRect(0, trackTopY, canvas.width, 4); ctx.fillRect(0, trackBottomY - 4, canvas.width, 4);
 
-            // Vykreslení celé řady překážek na této dráze
-            staticHurdlePositions.forEach(hx => {
-                drawHurdle(hx, laneY);
-            });
+        ctx.fillStyle = "rgba(255,255,255,0.6)";
+        let dashWidth = 30; let dashGap = 30;
+        let startDashX = -(cameraX % (dashWidth + dashGap));
+        for (let sx = startDashX; sx < canvas.width; sx += (dashWidth + dashGap)) {
+            ctx.fillRect(sx, trackTopY + (trackHeight / 2) - 2, dashWidth, 3);
         }
 
-        // RENDER BĚŽCŮ
-        list.forEach((player, index) => {
-            let laneY = (index * laneHeight) + (laneHeight - 10);
-            
-            let opponents = list.filter(o => o.role !== player.role);
-            let maxOppScore = opponents.length > 0 ? Math.max(...opponents.map(o => o.score)) : 0;
-            
-            let scoreDelta = player.score - maxOppScore;
-            let baseX = BASE_X + (scoreDelta * STEP_X);
-            
-            // Plynulý dopředný pohyb během letu paraboly
-            let visualXOffset = 0;
-            if (player.state === 'jumping' && player.jumpProgress) {
-                visualXOffset = player.jumpProgress * STEP_X;
+        let finishScreenX = FINISH_LINE_WORLD_X - cameraX;
+        if (finishScreenX >= -50 && finishScreenX <= canvas.width + 50) {
+            ctx.fillStyle = "#ffffff"; ctx.fillRect(finishScreenX, trackTopY, 16, trackHeight);
+            ctx.fillStyle = "#000000";
+            for(let ty = trackTopY; ty < trackBottomY; ty += 16) {
+                ctx.fillRect(finishScreenX, ty, 8, 8); ctx.fillRect(finishScreenX + 8, ty + 8, 8, 8);
             }
-            
-            let currentX = baseX + visualXOffset;
-            currentX = Math.max(25, Math.min(555, currentX));
+        }
 
+        for(let i = 0; i < 11; i++) {
+            let hurdleWorldX = START_WORLD_X + (i * STEP_X) + 55;
+            let hurdleScreenX = hurdleWorldX - cameraX;
+            if(hurdleScreenX >= -20 && hurdleScreenX <= canvas.width + 20) {
+                for(let row = 0; row < 4; row++) {
+                    drawHurdle(hurdleScreenX, trackTopY + 35 + (row * 32));
+                }
+            }
+        }
+
+        list.forEach((player, index) => {
+            let playerLaneY = trackTopY + 30 + (index * 30);
+            let screenX = player.worldX - cameraX;
             let color = playerColors[index % playerColors.length];
             let nameTag = player.name;
             
             if(player.lives <= 0) {
-                drawRunner(currentX, laneY, color, `${nameTag} [KO]`, true, false);
+                drawRunner(screenX, playerLaneY, color, `${nameTag} [KO]`, true, false);
             } else {
-                let currentY = laneY + (player.y || 0);
-                drawRunner(currentX, currentY, color, nameTag, player.state === 'tripping', player.state === 'jumping');
+                let currentY = playerLaneY + (player.y || 0);
+                drawRunner(screenX, currentY, color, nameTag, player.state === 'tripping', player.state === 'jumping');
             }
         });
     }
@@ -868,11 +831,23 @@
         draw();
         if (gameStarted) {
             if (myState.lives > 0 && myState.state === 'running') {
-                numberEl.textContent = myState.currentNumber;
+                
+                // KONTROLA ZMĚNY ČÍSLA -> Spustí se Text-To-Speech v Jazyce A pouze jednou
+                if (myState.currentNumber !== lastSpokenNumber && myState.currentNumber > 0) {
+                    lastSpokenNumber = myState.currentNumber;
+                    speakTargetNumber(myState.currentNumber, langA);
+                }
+
+                if (currentModeType === 'translation') {
+                    // TEXT JE ÚPLNĚ SKRYTÝ, nutí hráče čistě poslouchat
+                    numberEl.textContent = "🔊 POSLOUCHEJ...";
+                } else {
+                    numberEl.textContent = myState.currentNumber;
+                }
             } else if (myState.state === 'tripping') {
-                numberEl.textContent = "💥";
+                numberEl.textContent = "💥 KICK! 💥";
             } else if (myState.lives <= 0) {
-                numberEl.textContent = "KO";
+                numberEl.textContent = "❌ KO ❌";
             }
             requestAnimationFrame(gameLoop);
         }
