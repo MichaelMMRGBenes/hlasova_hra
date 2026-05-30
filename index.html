@@ -17,15 +17,12 @@
             <select id="global-lang-selector">
                 <option value="cs">Čeština</option>
                 <option value="fi">Suomi</option>
-                <option value="de">Deutsch</option>
                 <option value="en">English</option>
-                <option value="fr">Français</option>
-                <option value="es">Español</option>
             </select>
         </div>
     </header>
 
-    <div id="global-profile-box" style="display: block;"></div>
+    <div id="global-profile-box" style="display: none;"></div>
 
     <div id="screen-auth" class="screen active">
         <h2 data-i18n="authTitle">Přihlášení do hry</h2>
@@ -42,7 +39,7 @@
 
     <div id="screen-main" class="screen">
         <h2 data-i18n="mainTitle">Hlavní Menu</h2>
-        <button id="btn-logout" class="btn-danger" data-i18n="logout">Odhlásit se / Zpět na přihlášení</button>
+        <button id="btn-logout" class="btn-danger" data-i18n="logout">Odhlásit se</button>
         
         <div class="games-grid">
             <div class="game-card">
@@ -57,30 +54,40 @@
             </div>
             <div class="game-card locked">
                 <h3>3. Již brzy...</h3>
-                <p>Nová hlasová hra se připravuje.</p>
                 <button disabled>🔒</button>
             </div>
             <div class="game-card locked">
                 <h3>4. Již brzy...</h3>
-                <p>Nová hlasová hra se připravuje.</p>
                 <button disabled>🔒</button>
             </div>
         </div>
     </div>
 
-    <div id="screen-solo-setup" class="screen">
-        <h3 data-i18n="game1SetupTitle">Nastavení Sólo / Multiplayer</h3>
-        
-        <input type="hidden" id="player-name-input" value="Běžec">
-        
-        <div style="display: none;">
-            <button id="main-choose-online"></button>
-            <button id="online-go-create"></button>
-            <button id="online-go-join"></button>
+    <div id="screen-game1-mode" class="screen">
+        <h3>Běh přes překážky: Vyberte režim</h3>
+        <div class="mode-selection-grid">
+            <button id="game1-btn-solo" class="btn-mode-card">
+                <span class="mode-icon">🤖</span>
+                <span class="mode-title">Sám proti AI</span>
+                <span class="mode-desc">Trénuj výslovnost a poraz počítač.</span>
+            </button>
+            <button id="game1-btn-multi" class="btn-mode-card">
+                <span class="mode-icon">👥</span>
+                <span class="mode-title">Multiplayer</span>
+                <span class="mode-desc">Závodej v reálném čase proti ostatním hráčům.</span>
+            </button>
         </div>
+        <button class="btn-back-main" data-i18n="back">Zpět do menu</button>
+    </div>
 
-        <div id="game1-options-box" style="margin-top: 15px;">
-            <label data-i18n="labelMode">Režim zkoušení:</label>
+    <div id="screen-solo-setup" class="screen">
+        <h3>Nastavení hry: Sólo režim</h3>
+        
+        <div class="setup-box">
+            <label>Vaše jméno:</label>
+            <input type="text" id="player-name-input" value="Běžec">
+
+            <label>Režim zkoušení:</label>
             <select id="game-mode-type-solo">
                 <option value="classic">Klasické čtení</option>
                 <option value="translation" selected>Tlumočení / Překlad</option>
@@ -93,8 +100,7 @@
                 <option value="de-DE">Deutsch</option>
                 <option value="fr-FR">Français</option>
                 <option value="es-ES">Español</option>
-                <option value="fi-FI">Suomi</option>
-            </select>
+                </select>
 
             <div id="solo-lang-b-box">
                 <label>Jazyk B (Vaše řeč):</label>
@@ -105,26 +111,14 @@
                 </select>
             </div>
 
-            <div style="display: none;">
-                <select id="game-mode-type-online"><option value="classic"></option></select>
-                <div id="online-lang-b-box"></div>
-                <select id="player-count-select"><option value="2"></option></select>
-                <select id="lang-select-online-a"><option value="en-US"></option></select>
-                <select id="lang-select-online-b"><option value="fi-FI"></option></select>
-                <select id="track-length-online"><option value="15"></option></select>
-                <button id="create-room-execute-btn"></button>
-                <button id="join-room-execute-btn"></button>
-                <input id="room-code-input" value="">
-            </div>
-
-            <label data-i18n="labelDifficulty">Obtížnost bota:</label>
+            <label>Obtížnost bota:</label>
             <select id="difficulty-select">
-                <option value="easy" class="opt-diff-easy">Easy</option>
-                <option value="medium" class="opt-diff-med" selected>Medium</option>
-                <option value="hard" class="opt-diff-hard">Hard</option>
+                <option value="easy">Lehká</option>
+                <option value="medium" selected>Střední</option>
+                <option value="hard">Těžká</option>
             </select>
 
-            <label data-i18n="labelTrack">Délka trati:</label>
+            <label>Délka trati:</label>
             <select id="track-length-solo">
                 <option value="7" class="opt-track-7">7</option>
                 <option value="15" class="opt-track-15" selected>15</option>
@@ -132,28 +126,73 @@
             </select>
         </div>
 
-        <br>
-        <button id="solo-start-game-btn" style="background-color: #2ecc71;" data-i18n="startRace">Do herní místnosti</button>
-        <button class="btn-back" data-i18n="back">Zpět</button>
+        <button id="solo-start-game-btn" class="btn-success" style="margin-top: 15px;">Do herní místnosti</button>
+        <button class="btn-back">Zpět</button>
+    </div>
+
+    <div id="screen-online-setup" class="screen">
+        <h3>Multiplayer Lobby</h3>
+        
+        <div class="setup-grid">
+            <div class="setup-card">
+                <h4>Vytvořit novou hru</h4>
+                <label>Režim zkoušení:</label>
+                <select id="game-mode-type-online">
+                    <option value="classic">Klasické čtení</option>
+                    <option value="translation" selected>Tlumočení / Překlad</option>
+                </select>
+
+                <label>Jazyk A (Zadání):</label>
+                <select id="lang-select-online-a">
+                    <option value="en-US">English</option>
+                    <option value="cs-CZ">Čeština</option>
+                    <option value="de-DE">Deutsch</option>
+                    <option value="fr-FR">Français</option>
+                    <option value="es-ES">Español</option>
+                </select>
+
+                <div id="online-lang-b-box">
+                    <label>Jazyk B (Vaše řeč):</label>
+                    <select id="lang-select-online-b">
+                        <option value="fi-FI">Suomi</option>
+                        <option value="en-US">English</option>
+                        <option value="cs-CZ">Čeština</option>
+                    </select>
+                </div>
+
+                <label>Délka trati:</label>
+                <select id="track-length-online">
+                    <option value="7">7 překážek</option>
+                    <option value="15" selected>15 překážek</option>
+                    <option value="30">30 překážek</option>
+                </select>
+
+                <button id="create-room-execute-btn" class="btn-primary">Založit místnost</button>
+            </div>
+
+            <div class="setup-card">
+                <h4>Připojit se ke hře</h4>
+                <label>Kód místnosti:</label>
+                <input type="text" id="room-code-input" placeholder="Zadej kód (např. 4582)" style="text-transform: uppercase; text-align: center; font-size: 1.2rem;">
+                <button id="join-room-execute-btn" class="btn-success" style="margin-top: 15px;">Vstoupit do místnosti</button>
+            </div>
+        </div>
+        <button class="btn-back" style="margin-top: 20px;">Zpět</button>
     </div>
 
     <div id="screen-game" class="screen">
-        <div id="room-id-display" style="font-weight: bold; margin-bottom: 10px;"></div>
-        
+        <div id="room-id-display" style="font-weight: bold; font-size: 1.2rem; margin-bottom: 10px; color: #2c3e50;"></div>
         <div id="hud-players-container" class="hud-container"></div>
-        
         <div id="number-display" style="font-size: 3rem; font-weight: bold; text-align: center; margin: 15px 0; min-height: 50px; color: #2c3e50;"></div>
-        
         <div id="status" style="text-align: center; color: #7f8c8d; font-style: italic; margin-bottom: 10px;">Připraveno...</div>
         
         <div style="text-align: center; margin-bottom: 10px;">
             <button id="repeat-voice-btn" style="display: none; padding: 6px 15px; margin-right: 10px;">🔊 Opakovat zadání</button>
-            <button id="start-match-btn" style="background-color: #2ecc71; padding: 6px 15px;">Odstartovat závod</button>
+            <button id="start-match-btn" class="btn-success" style="padding: 6px 15px; display: none;">Odstartovat závod</button>
         </div>
 
-        <canvas id="game-canvas" width="750" height="280"></canvas>
-        <br>
-        <button id="game1-quit-btn" class="btn-back-main btn-danger" style="margin-top: 10px;" data-i18n="quitGame">Opustit hru</button>
+        <canvas id="game-canvas" width="1000" height="320"></canvas>
+        <button id="game1-quit-btn" class="btn-back-main btn-danger" style="margin-top: 10px;">Opustit hru</button>
     </div>
 
     <div id="screen-victory" class="screen">
@@ -168,30 +207,27 @@
                     <th style="padding: 8px;">Výsledek</th>
                 </tr>
             </thead>
-            <tbody id="stats-tbody">
-                </tbody>
+            <tbody id="stats-tbody"></tbody>
         </table>
 
         <div id="replay-section" style="display: none; text-align: center; margin-top: 20px;">
-            <button id="rematch-btn" style="background-color: #2ecc71; padding: 10px 20px; font-size: 1.1rem;">Běžet znovu!</button>
+            <button id="rematch-btn" class="btn-success" style="padding: 10px 20px; font-size: 1.1rem;">Běžet znovu!</button>
         </div>
-        <br>
-        <button class="btn-back-main" data-i18n="back" style="margin-top: 15px;">Zpět do hlavního menu</button>
+        <button class="btn-back-main" style="margin-top: 15px;">Zpět do hlavního menu</button>
     </div>
 
     <div id="screen-game2-setup" class="screen">
         <h3 data-i18n="game2SetupTitle">Nastavení Pexesa</h3>
-        <button id="game2-start-btn" style="background-color: #0284c7;" data-i18n="startIce">Vstoupit na kry</button>
+        <button id="game2-start-btn" style="background-color: #0284c7; color: white;" data-i18n="startIce">Vstoupit na kry</button>
         <button class="btn-back-main" data-i18n="back">Zpět</button>
     </div>
 
     <div id="screen-game2-play" class="screen">
-        <canvas id="game2-canvas" width="750" height="300"></canvas>
-        <br>
+        <canvas id="game2-canvas" width="1000" height="320"></canvas>
         <button id="game2-quit-btn" class="btn-danger" data-i18n="quitGame">Ukončit pexeso</button>
     </div>
 
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     
