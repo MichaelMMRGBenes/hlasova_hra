@@ -98,16 +98,19 @@
         <input type="text" id="player-name-input" value="Běžec" maxlength="15">
     </div>
 
-    <div id="screen-global-hub" class="screen">
-        <h2>Game Hub</h2>
-        <p>Nemáš dostatek herních kreditů nebo vypršel limit.</p>
-        <button onclick="changeScreen('screen-main')">Zpět do menu</button>
+<div id="screen-global-hub" class="screen active">
+        <h2>🎮 Michaelovo Herní Centrum 🎮</h2>
+        <p>Vyber si hru, kterou chceš hrát:</p>
+        <button onclick="selectGame('voice-race')" style="background: #e67e22; display: block; width: 90%; margin: 10px auto;">🏃 Hlasový Závod (Přetahovaná)</button>
+        <button onclick="selectGame('ice-floes')" style="background: #2980b9; display: block; width: 90%; margin: 10px auto;">❄️ Polární pexeso (Skoky přes kry)</button>
     </div>
 
-    <div id="screen-main" class="screen active">
+    <div id="screen-main" class="screen">
         <h1 id="main-title">Hlasový Závod: Vyřazovací Přetahovaná</h1>
         <button id="main-choose-solo">🏃 Hrát sám (Proti PC)</button>
         <button id="main-choose-online">🌐 Online Multiplayer</button>
+        <br><br>
+        <button onclick="changeScreen('screen-global-hub')" style="background:#555;">← Do Herního Centra</button>
     </div>
 
     <div id="screen-solo-setup" class="screen">
@@ -259,7 +262,43 @@
             <button id="btn-to-menu" onclick="changeScreen('screen-main')">Ne, do hlavního menu</button>
         </div>
     </div>
+<div id="screen-game2-setup" class="screen">
+        <h2>Nastavení: Polární pexeso</h2>
+        <p>Počítač ti řekne řadu čísel, kterou musíš zopakovat ve správném pořadí, abys přeskočil na další kru!</p>
+        <div>
+            <label>Počáteční délka řady (obtížnost): </label>
+            <select id="game2-difficulty">
+                <option value="2">Lehká (2 čísla)</option>
+                <option value="3" selected>Střední (3 čísla)</option>
+                <option value="4">Těžká (4 čísla)</option>
+            </select>
+        </div>
+        <div>
+            <label>Jazyk hry: </label>
+            <select id="game2-lang">
+                <option value="en-US" selected>English</option>
+                <option value="cs-CZ">Čeština</option>
+                <option value="fi-FI">Suomi</option>
+                <option value="de-DE">Deutsch</option>
+            </select>
+        </div>
+        <br>
+        <button onclick="changeScreen('screen-global-hub')" style="background:#555;">← Zpět do Hubu</button>
+        <button onclick="game2StartGame()" style="background:#2ecc71;">Vstoupit na ledovec</button>
+    </div>
 
+    <div id="screen-game2-play" class="screen" style="max-width: 850px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; background: #111; padding: 10px; border-radius: 5px;">
+            <span id="game2-status" style="font-weight: bold; color: #3498db;">Připrav se...</span>
+            <span id="game2-hud-lives">❤️ ❤️ ❤️</span>
+        </div>
+
+        <canvas id="game2-canvas" width="800" height="280" style="background: #102a43; border: 3px solid #243b53; border-radius: 5px; margin: 15px auto; display: block;"></canvas>
+
+        <div id="game2-number-display" style="font-size: 32px; font-weight: bold; margin: 15px; color: #34d399; min-height: 40px;">-</div>
+        <button id="game2-repeat-btn" onclick="game2PlaySequence()" style="background:#9b59b6; display:none;">🔁 Přehrát řadu znovu</button>
+        <button onclick="changeScreen('screen-global-hub')" style="background:#e74c3c; margin-top:20px;">Ukončit a jít do Hubu</button>
+    </div>
     <script>
     // --- POMOCNÉ FUNKCE PRO KREDITY (Z původní části 1/3) ---
     function checkAndConsumeGameCredit() {
@@ -275,11 +314,15 @@
     }
 
     // --- NAVIGACE MEZI HERAMI ---
-    function selectGame(gameId) {
-        if (gameId === 'voice-race') {
-            changeScreen('screen-main');
-        }
+function selectGame(gameId) {
+    if (gameId === 'voice-race') {
+        changeScreen('screen-main');
+    } 
+    // PŘIDÁNO:
+    else if (gameId === 'ice-floes') {
+        changeScreen('screen-game2-setup');
     }
+}
 
     // --- INTEGRACE FIREBASE PROJEKTU ---
     const firebaseConfig = {
@@ -600,6 +643,7 @@
     }
 
     function resetGameEngine() {
+    if(typeof game2Active !== 'undefined') game2Active = false;
         gameStarted = false;
         lastSpokenNumber = 0;
         repeatBtn.style.display = 'none';
