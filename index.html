@@ -3,530 +3,390 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hlasový Závod: Vyřazovací Přetahovaná</title>
+    <title>Jazykový Závodník & Polární Pexeso</title>
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 
     <style>
+        /* --- SVĚTLÝ REŽIM (BRIGHT MODE) VIA CSS --- */
         body {
+            background-color: #f1f5f9; /* Jemná světle šedá */
+            color: #0f172a;            /* Tmavě břidlicový text pro skvělou čitelnost */
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #1a1a1a;
-            color: #ffffff;
             margin: 0;
             padding: 20px;
-            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
+
+        #app-container {
+            width: 100%;
+            max-width: 800px;
+        }
+
         .screen {
             display: none;
-            max-width: 600px;
-            margin: 0 auto;
-            background: #2a2a2a;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            background: #ffffff;
+            color: #0f172a;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            padding: 25px;
+            margin-top: 20px;
+            border: 1px solid #e2e8f0;
         }
+
         .screen.active {
             display: block;
         }
-        button, select, input {
-            padding: 10px 15px;
-            margin: 8px;
+
+        /* Ovládací prvky a formuláře */
+        input[type="text"], input[type="email"], input[type="password"], select {
+            background-color: #ffffff;
+            color: #0f172a;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            padding: 10px;
             font-size: 16px;
-            border-radius: 5px;
-            border: none;
-            cursor: pointer;
+            width: 100%;
+            box-sizing: border-box;
+            margin-bottom: 15px;
+            transition: border-color 0.2s;
         }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+
+        /* Tlačítka */
         button {
-            background: #3498db;
-            color: white;
+            background-color: #3498db;
+            color: #ffffff;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 6px;
+            cursor: pointer;
             font-weight: bold;
-            transition: background 0.2s;
+            font-size: 15px;
+            transition: background-color 0.2s, transform 0.1s;
+            margin-right: 5px;
+            margin-bottom: 5px;
         }
+
         button:hover {
-            background: #2980b9;
+            background-color: #2980b9;
         }
-        input, select {
-            background: #444;
-            color: white;
-            border: 1px solid #555;
+
+        button:active {
+            transform: scale(0.98);
         }
-        #game-canvas {
-            background: #222;
-            border: 3px solid #333;
-            border-radius: 5px;
-            margin: 15px auto;
+
+        .btn-back, .btn-back-main {
+            background-color: #64748b;
+        }
+        .btn-back:hover, .btn-back-main:hover {
+            background-color: #475569;
+        }
+
+        /* Herní Canvasy */
+        canvas {
+            background-color: #ffffff;
+            border: 2px solid #cbd5e1;
+            border-radius: 8px;
             display: block;
+            margin: 15px auto;
+            max-width: 100%;
         }
+
+        #game2-canvas {
+            background-color: #bae6fd; /* Světle tyrkysové/ledové moře pro kry */
+            border: 2px solid #0284c7;
+        }
+
+        /* Profily a HUD */
+        #global-profile-box {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            padding: 12px;
+            border-radius: 8px;
+            width: 100%;
+            box-sizing: border-box;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
         .hud-badge {
-            display: inline-block;
-            background: #333;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
             padding: 8px 12px;
-            margin: 5px;
-            border-radius: 5px;
+            border-radius: 6px;
+            margin-bottom: 5px;
             font-weight: bold;
         }
+
         .hud-badge.mine {
-            border: 2px solid #2ecc71;
-            background: #1e3d29;
+            border-color: #3498db;
+            background: #f0f9ff;
+            color: #0369a1;
         }
-        #number-display {
-            font-size: 48px;
-            font-weight: bold;
-            margin: 15px;
-            color: #f1c40f;
-            min-height: 58px;
-        }
+
+        /* Tabulky výsledků */
         table {
             width: 100%;
-            margin-top: 15px;
             border-collapse: collapse;
+            margin-top: 15px;
         }
+
         th, td {
             padding: 10px;
-            border-bottom: 1px solid #444;
+            border-bottom: 1px solid #e2e8f0;
+            text-align: left;
         }
+
         th {
-            background: #333;
+            background-color: #f8fafc;
         }
     </style>
 </head>
 <body>
 
-    <div id="global-profile-box" style="margin-bottom: 20px;">
-        <span id="lbl-profile">Tvoje závodní jméno: </span>
-        <input type="text" id="player-name-input" value="Běžec" maxlength="15">
+<div id="app-container">
+
+    <div id="global-profile-box" style="display:none;">
+        <div>
+            <b>Uživatel:</b> <span id="user-profile-name">Anonym</span>
+        </div>
+        <button onclick="logoutUser()" style="padding: 6px 12px; font-size: 12px; background-color: #ef4444;">Odhlásit se</button>
     </div>
 
-<div id="screen-global-hub" class="screen active">
-        <h2>🎮 Michaelovo Herní Centrum 🎮</h2>
-        <p>Vyber si hru, kterou chceš hrát:</p>
-        <button onclick="selectGame('voice-race')" style="background: #e67e22; display: block; width: 90%; margin: 10px auto;">🏃 Hlasový Závod (Přetahovaná)</button>
-        <button onclick="selectGame('ice-floes')" style="background: #2980b9; display: block; width: 90%; margin: 10px auto;">❄️ Polární pexeso (Skoky přes kry)</button>
+    <div id="screen-auth" class="screen active">
+        <h2>Vítejte v aplikaci</h2>
+        <p>Pro pokračování do herního hubu se prosím přihlaste nebo zaregistrujte.</p>
+        
+        <div style="margin-top: 20px;">
+            <label>E-mailová adresa</label>
+            <input type="email" id="auth-email" placeholder="jmeno@domena.cz">
+            
+            <label>Heslo</label>
+            <input type="password" id="auth-password" placeholder="******">
+        </div>
+
+        <div style="margin-top: 10px;">
+            <button id="btn-email-login">Přihlásit se</button>
+            <button id="btn-email-register" style="background-color: #10b981;">Vytvořit účet</button>
+        </div>
+
+        <div style="text-align: center; margin: 20px 0; color: #64748b; font-weight: bold;">NEBO</div>
+
+        <button id="btn-google-login" style="background-color: #ea4335; width: 100%;">
+            Přihlásit se přes Google
+        </button>
     </div>
 
     <div id="screen-main" class="screen">
-        <h1 id="main-title">Hlasový Závod: Vyřazovací Přetahovaná</h1>
-        <button id="main-choose-solo">🏃 Hrát sám (Proti PC)</button>
-        <button id="main-choose-online">🌐 Online Multiplayer</button>
-        <br><br>
-        <button onclick="changeScreen('screen-global-hub')" style="background:#555;">← Do Herního Centra</button>
+        <h2>Herní Hub</h2>
+        <p>Vyberte si výukovou hru, kterou chcete spustit:</p>
+        
+        <div style="margin-top: 20px;">
+            <input type="text" id="player-name-input" placeholder="Tvoje herní přezdívka" style="max-width: 300px;"><br><br>
+            <button id="main-choose-solo">Hra 1: Překážkový Běh (Solo / Online)</button><br><br>
+            <button onclick="game2InitSetupScreen()" style="background-color: #0284c7;">Hra 2: Polární Pexeso (Kry)</button>
+        </div>
     </div>
 
     <div id="screen-solo-setup" class="screen">
-        <h2 id="title-solo-setup">Nastavení Solo hry</h2>
-        <div>
-            <label id="lbl-diff">Obtížnost AI: </label>
-            <select id="difficulty-select">
-                <option value="easy" class="opt-diff-easy">Lehká</option>
-                <option value="medium" class="opt-diff-med" selected>Střední</option>
-                <option value="hard" class="opt-diff-hard">Těžká</option>
-            </select>
-        </div>
-        <div>
-            <label id="lbl-track-solo">Délka trati: </label>
-            <select id="track-length-solo">
-                <option value="7" class="opt-track-7">Krátká (7)</option>
-                <option value="15" class="opt-track-15" selected>Střední (15)</option>
-                <option value="30" class="opt-track-30">Dlouhá (30)</option>
-            </select>
-        </div>
-        <div>
-            <label id="lbl-mode-solo">Mód hry: </label>
-            <select id="game-mode-type-solo">
-                <option value="classic" class="opt-mode-classic">Klasický (Číslice -> Slovo)</option>
-                <option value="translation" class="opt-mode-trans" selected>Tlumočení (Hlas A -> Odpověď B)</option>
-            </select>
-        </div>
-        <div>
-            <label id="lbl-lang-solo-a">Jazyk A (Kterým hra mluví): </label>
-            <select id="lang-select-solo-a">
-                <option value="cs-CZ">Čeština</option>
-                <option value="en-US" selected>English</option>
-                <option value="de-DE">Deutsch</option>
-                <option value="fr-FR">Français</option>
-                <option value="es-ES">Español</option>
-                <option value="fi-FI">Suomi</option>
-            </select>
-        </div>
+        <h3>Nastavení Sólo Běhu</h3>
+        <label>Režim hry:</label>
+        <select id="game-mode-type-solo">
+            <option value="translation">Překlad (Slyšíte Jazyk A -> Říkáte Jazyk B)</option>
+            <option value="classic">Klasické čtení (Vidíte číslo -> Čtete ho)</option>
+        </select>
+
+        <label>Jazyk A (Zadání):</label>
+        <select id="lang-select-solo-a">
+            <option value="en-US">English</option>
+            <option value="fi-FI">Suomi</option>
+            <option value="de-DE">Deutsch</option>
+            <option value="cs-CZ">Čeština</option>
+        </select>
+
         <div id="solo-lang-b-box">
-            <label id="lbl-lang-solo-b">Jazyk B (Kterým odpovídáš ty): </label>
+            <label>Jazyk B (Vaše řeč):</label>
             <select id="lang-select-solo-b">
-                <option value="cs-CZ">Čeština</option>
+                <option value="fi-FI" selected>Suomi</option>
                 <option value="en-US">English</option>
                 <option value="de-DE">Deutsch</option>
-                <option value="fr-FR">Français</option>
-                <option value="es-ES">Español</option>
-                <option value="fi-FI" selected>Suomi</option>
+                <option value="cs-CZ">Čeština</option>
             </select>
         </div>
-        <br>
-        <button class="btn-back">← Zpět</button>
-        <button id="solo-start-game-btn">Vstoupit na stadion</button>
+
+        <label>Obtížnost AI Bota:</label>
+        <select id="difficulty-select">
+            <option value="easy">Lehká</option>
+            <option value="medium" selected>Střední</option>
+            <option value="hard">Těžká</option>
+        </select>
+
+        <label>Délka trati (počet překážek):</label>
+        <select id="track-length-solo">
+            <option value="10">10 čísel (Krátká)</option>
+            <option value="15" selected>15 čísel (Střední)</option>
+            <option value="30">30 čísel (Dlouhá)</option>
+        </select>
+
+        <br><br>
+        <button id="solo-start-game-btn">Odstartovat závod</button>
+        <button class="btn-back">Zpět</button>
     </div>
 
     <div id="screen-online-branch" class="screen">
-        <h2 id="title-online-branch">Online Lobby</h2>
-        <button id="online-go-create">➕ Založit novou hru</button>
-        <button id="online-go-join">🔑 Připojit se ke hře</button>
-        <br><br>
-        <button class="btn-back-main">← Zpět do hlavního menu</button>
+        <h3>Multiplayer Závod</h3>
+        <button id="online-go-create">Vytvořit novou místnost</button>
+        <button id="online-go-join">Připojit se do místnosti</button>
+        <button class="btn-back">Zpět</button>
     </div>
 
     <div id="screen-online-create" class="screen">
-        <h2 id="title-online-create">Založit novou místnost</h2>
-        <div>
-            <label id="lbl-max-players">Maximální počet hráčů: </label>
-            <select id="player-count-select">
-                <option value="2" selected>2 Hráči</option>
-                <option value="3">3 Hráči</option>
-                <option value="4">4 Hráči</option>
-            </select>
-        </div>
-        <div>
-            <label id="lbl-track-online">Délka trati: </label>
-            <select id="track-length-online">
-                <option value="7" class="opt-track-7">7 překážek</option>
-                <option value="15" class="opt-track-15" selected>15 překážek</option>
-                <option value="30" class="opt-track-30">30 překážek</option>
-            </select>
-        </div>
-        <div>
-            <label id="lbl-mode-online">Mód hry: </label>
-            <select id="game-mode-type-online">
-                <option value="classic" class="opt-mode-classic">Klasický</option>
-                <option value="translation" class="opt-mode-trans" selected>Tlumočení</option>
-            </select>
-        </div>
-        <div>
-            <label id="lbl-lang-online-a">Jazyk A: </label>
-            <select id="lang-select-online-a">
-                <option value="en-US" selected>English</option>
-                <option value="cs-CZ">Čeština</option>
-            </select>
-        </div>
+        <h3>Vytvořit místnost</h3>
+        <label>Max hráčů:</label>
+        <select id="player-count-select"><option value="2">2</option><option value="3">3</option><option value="4">4</option></select>
+        
+        <label>Režim hry:</label>
+        <select id="game-mode-type-online"><option value="translation">Překlad</option><option value="classic">Klasický</option></select>
+        
+        <label>Jazyk A:</label>
+        <select id="lang-select-online-a"><option value="en-US">English</option><option value="fi-FI">Suomi</option></select>
+        
         <div id="online-lang-b-box">
-            <label id="lbl-lang-online-b">Jazyk B: </label>
-            <select id="lang-select-online-b">
-                <option value="fi-FI" selected>Suomi</option>
-                <option value="cs-CZ">Čeština</option>
-            </select>
+            <label>Jazyk B:</label>
+            <select id="lang-select-online-b"><option value="fi-FI">Suomi</option><option value="en-US">English</option></select>
         </div>
-        <br>
-        <button class="btn-back">← Zpět</button>
-        <button id="create-room-execute-btn">Vytvořit a vygenerovat kód</button>
+
+        <label>Délka trati:</label>
+        <select id="track-length-online"><option value="15">15</option><option value="30">30</option></select>
+        
+        <br><br>
+        <button id="create-room-execute-btn">Založit a čekat na hráče</button>
+        <button class="btn-back">Zpět</button>
     </div>
 
     <div id="screen-online-join" class="screen">
-        <h2 id="title-online-join">Zadej kód hry</h2>
-        <input type="text" id="room-code-input" placeholder="Např. 1234" maxlength="6">
-        <br><br>
-        <button class="btn-back">← Zpět</button>
-        <button id="join-room-execute-btn">Vstoupit do místnosti</button>
+        <h3>Zadejte kód místnosti</h3>
+        <input type="text" id="room-code-input" placeholder="Např. 4821">
+        <button id="join-room-execute-btn">Vstoupit do závodu</button>
+        <button class="btn-back">Zpět</button>
     </div>
 
-    <div id="screen-game" class="screen" style="max-width: 850px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; background: #111; padding: 10px; border-radius: 5px;">
-            <span id="room-id-display" style="font-weight: bold; color: #3498db;">Místnost: -</span>
-            <span id="status">Připrav se...</span>
-            <button id="start-match-btn" style="display:none; background:#2ecc71;">START ZÁVODU</button>
+    <div id="screen-game" class="screen">
+        <h3 id="room-id-display">Závod</h3>
+        <div id="status" style="font-weight:bold; margin-bottom:10px;">Připraven ke startu...</div>
+        
+        <div id="hud-players-container"></div>
+
+        <div style="text-align:center; margin:15px 0;">
+            <div id="number-display" style="font-size:42px; font-weight:bold; color:#2c3e50; min-height:60px;">---</div>
+            <button id="repeat-voice-btn" style="display:none; background-color:#e67e22;">🔊 Opakovat výslovnost</button>
+            <button id="start-match-btn" style="display:none; background-color:#2ecc71;">START MATCH</button>
         </div>
 
-        <div id="hud-players-container" style="margin: 10px 0;"></div>
-
-        <canvas id="game-canvas" width="800" height="280"></canvas>
-
-        <div id="number-display">-</div>
-        <button id="repeat-voice-btn" style="display:none; background:#9b59b6;">🔁 Opakovat výslovnost</button>
+        <canvas id="game-canvas" width="750" height="280"></canvas>
+        <button class="btn-back-main">Opustit závod</button>
     </div>
 
     <div id="screen-victory" class="screen">
-        <h1 id="victory-title">🎉 Zvítězil jsi! 🎉</h1>
-        <h3 id="title-stats">Výsledková tabule zápasu</h3>
-        
+        <h2 id="victory-title">Konec Závodu!</h2>
         <table>
             <thead>
-                <tr>
-                    <th id="th-player">Hráč</th>
-                    <th id="th-score">Skóre (Body)</th>
-                    <th id="th-lives">Zbývající životy</th>
-                    <th id="th-result">Výsledek</th>
-                </tr>
+                <tr><th>Hráč</th><th>Skóre (m)</th><th>Životy</th><th>Stav</th></tr>
             </thead>
             <tbody id="stats-tbody"></tbody>
         </table>
-
-        <div id="replay-section" style="display:none; margin-top:20px;">
-            <p id="lbl-replay">Chceš hrát znovu?</p>
-            <button id="rematch-btn">Ano, nová hra</button>
-            <button id="btn-to-menu" onclick="changeScreen('screen-main')">Ne, do hlavního menu</button>
-        </div>
-    </div>
-<div id="screen-game2-setup" class="screen">
-        <h2>Nastavení: Polární pexeso</h2>
-        <p>Počítač ti řekne řadu čísel, kterou musíš zopakovat ve správném pořadí, abys přeskočil na další kru!</p>
-        <div>
-            <label>Počáteční délka řady (obtížnost): </label>
-            <select id="game2-difficulty">
-                <option value="2">Lehká (2 čísla)</option>
-                <option value="3" selected>Střední (3 čísla)</option>
-                <option value="4">Těžká (4 čísla)</option>
-            </select>
-        </div>
-        <div>
-            <label>Jazyk hry: </label>
-            <select id="game2-lang">
-                <option value="en-US" selected>English</option>
-                <option value="cs-CZ">Čeština</option>
-                <option value="fi-FI">Suomi</option>
-                <option value="de-DE">Deutsch</option>
-            </select>
-        </div>
         <br>
-        <button onclick="changeScreen('screen-global-hub')" style="background:#555;">← Zpět do Hubu</button>
-        <button onclick="game2StartGame()" style="background:#2ecc71;">Vstoupit na ledovec</button>
+        <div id="replay-section" style="display:none;">
+            <button id="rematch-btn">Dát si odvetu</button>
+            <button class="btn-back-main">Návrat do Hubu</button>
+        </div>
     </div>
 
-    <div id="screen-game2-play" class="screen" style="max-width: 850px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; background: #111; padding: 10px; border-radius: 5px;">
-            <span id="game2-status" style="font-weight: bold; color: #3498db;">Připrav se...</span>
-            <span id="game2-hud-lives">❤️ ❤️ ❤️</span>
+    <div id="screen-game2-setup" class="screen">
+        <h3>Nastavení: Polární Pexeso</h3>
+        <label>Jazyk zkoušení:</label>
+        <select id="game2-lang">
+            <option value="fi-FI">Suomi (Finsky)</option>
+            <option value="en-US">English (Anglicky)</option>
+            <option value="de-DE">Deutsch (Německy)</option>
+        </select>
+
+        <label>Počet čísel v první řadě (Počáteční obtížnost):</label>
+        <select id="game2-difficulty">
+            <option value="2">2 čísla (Jednoduchá)</option>
+            <option value="3" selected>3 čísla (Střední)</option>
+            <option value="5">5 čísel (Profík)</option>
+        </select>
+        
+        <br><br>
+        <button onclick="game2StartGame()" style="background-color: #0284c7;">Skočit na kry</button>
+        <button class="btn-back-main">Zpět do Hubu</button>
+    </div>
+
+    <div id="screen-game2-play" class="screen">
+        <h3>Polární Pexeso</h3>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: bold;">
+            <div id="game2-hud-lives">❤️ ❤️ ❤️</div>
+            <div id="game2-hud-status">Poslouchej a opakuj řadu!</div>
         </div>
 
-        <canvas id="game2-canvas" width="800" height="280" style="background: #102a43; border: 3px solid #243b53; border-radius: 5px; margin: 15px auto; display: block;"></canvas>
+        <div style="text-align:center; margin:15px 0;">
+            <div id="game2-status" style="font-weight:bold; color:#f1c40f; margin-bottom:5px;">PŘÍPRAVA...</div>
+            <div id="game2-number-display" style="font-size:36px; font-weight:bold; color:#0369a1; min-height:50px;">???</div>
+            <button id="game2-repeat-btn" onclick="game2PlaySequence()" style="display:none; background-color:#e67e22;">🔊 Zopakovat zvuk bota</button>
+        </div>
 
-        <div id="game2-number-display" style="font-size: 32px; font-weight: bold; margin: 15px; color: #34d399; min-height: 40px;">-</div>
-        <button id="game2-repeat-btn" onclick="game2PlaySequence()" style="background:#9b59b6; display:none;">🔁 Přehrát řadu znovu</button>
-        <button onclick="changeScreen('screen-global-hub')" style="background:#e74c3c; margin-top:20px;">Ukončit a jít do Hubu</button>
+        <canvas id="game2-canvas" width="750" height="300"></canvas>
+        <button onclick="game2Quit()" class="btn-back-main">Ukončit pexeso</button>
     </div>
-    <script>
-    // --- POMOCNÉ FUNKCE PRO KREDITY (Z původní části 1/3) ---
-    function checkAndConsumeGameCredit() {
-        let data = JSON.parse(localStorage.getItem('game_hub_limit')) || { count: 0 };
-        data.count++;
-        localStorage.setItem('game_hub_limit', JSON.stringify(data));
-        updateFreeGamesUI();
-        return true;
-    }
 
-    function updateFreeGamesUI() {
-        console.log("Herní hub limit aktualizován.");
-    }
+</div>
 
-    // --- NAVIGACE MEZI HERAMI ---
-function selectGame(gameId) {
-    if (gameId === 'voice-race') {
-        changeScreen('screen-main');
-    } 
-    // PŘIDÁNO:
-    else if (gameId === 'ice-floes') {
-        changeScreen('screen-game2-setup');
-    }
-}
+<script>
+    // --- KONFIGURACE FIREBASE ---
+    // Zde vložte svůj firebase inicializační kód:
+const firebaseConfig = {
+  apiKey: "AIzaSyADcQnyF13k2oHefln1rNBqvZm5_BnroPo",
+  authDomain: "hlasovahra.firebaseapp.com",
+  databaseURL: "https://hlasovahra-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "hlasovahra",
+  storageBucket: "hlasovahra.firebasestorage.app",
+  messagingSenderId: "7010973655",
+  appId: "1:7010973655:web:a9134f8f83d4b1e104bd92",
+  measurementId: "G-L3SHDVNWWW"
+};
+firebase.initializeApp(firebaseConfig);
+    
+    // Fallback definice pro případ, že databáze není hned připojena
+    const db = typeof firebase !== 'undefined' ? firebase.database() : null;
 
-    // --- INTEGRACE FIREBASE PROJEKTU ---
-    const firebaseConfig = {
-        apiKey: "AIzaSyADCqnyF13k2oHefln1rNBqvZm5_BnroPo",
-        authDomain: "hlasovahra.firebaseapp.com",
-        databaseURL: "https://hlasovahra-default-rtdb.europe-west1.firebasedatabase.app",
-        projectId: "hlasovahra",
-        storageBucket: "hlasovahra.firebasestorage.app",
-        messagingSenderId: "7010973655",
-        appId: "1:7010973655:web:a9134f8f83d4b1e104bd92",
-        measurementId: "G-L3SHDVNWWW"
-    };
-        
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-
-    // --- SLOVNÍK PRO MULTIJAZYČNOST ROZHRANÍ (I18N) ---
-    let currentUILang = 'cs';
+    // --- LOKALIZACE UI TEXTŮ (Zjednodušená verze pro správný chod) ---
+    const currentUILang = 'cs';
     const uiTexts = {
-        cs: {
-            profileLabel: "Tvoje závodní jméno: ", mainTitle: "Hlasový Závod: Vyřazovací Přetahovaná",
-            btnSolo: "🏃 Hrát sám (Proti PC)", btnOnline: "🌐 Online Multiplayer", titleSoloSetup: "Nastavení Solo hry",
-            lblDiff: "Obtížnost AI: ", lblTrack: "Délka trati: ", lblMode: "Mód hry: ",
-            lblLangA: "Jazyk A (Kterým hra mluví): ", lblLangB: "Jazyk B (Kterým odpovídáš ty): ",
-            btnStartStadion: "Vstoupit na stadion", btnBack: "← Zpět", titleOnlineBranch: "Online Lobby",
-            btnCreateRoom: "➕ Založit novou hru", btnJoinRoom: "🔑 Připojit se ke hře", btnBackMain: "← Zpět do hlavního menu",
-            titleCreateRoom: "Založit novou místnost", lblMaxPlayers: "Maximální počet hráčů: ",
-            btnCreateExec: "Vytvořit a vygenerovat kód", titleJoinRoom: "Zadej kód hry", btnJoinExec: "Vstoupit do místnosti",
-            btnStartMatch: "START ZÁVODU", btnRepeat: "🔁 Opakovat výslovnost", lblReplay: "Chceš hrát znovu?",
-            btnRematch: "Ano, nová hra", btnToMenu: "Ne, do hlavního menu", thPlayer: "Hráč", thScore: "Skóre (Body)",
-            thLives: "Zbývající životy", thResult: "Výsledek", titleStats: "Výsledková tabule zápasu",
-            diffEasy: "Lehká (Pomalé AI)", diffMed: "Střední (Vyvážená)", diffHard: "Těžká (Rychlá mašina)",
-            trackShort: "Krátká (7 překážek)", trackMed: "Střední (15 překážek)", trackLong: "Dlouhá (30 překážek)",
-            modeClassic: "Klasický (Číslice -> Slovo)", modeTrans: "Tlumočení (Hlas A -> Hlasová odpověď B)",
-            statusReady: "Připrav se...", statusReadyStart: "Všichni jsou tady. Odstartuj závod!",
-            statusWaitHost: "Čekej, až zakladatel spustí závod...", statusGo: "BĚŽ!!!", statusKick: "💥 KICK! 💥",
-            statusKO: "💀 K.O. 💀", statusListening: "🔊 POSLOUCHEJ...", statusHearing: "Slyším: ",
-            roomLabel: "Místnost: ", soloLabel: "Solo: ", winnerText: "🎉 Zvítězil jsi! 🎉", loserText: "💀 Vítězem se stává: ",
-            badgeFinished: "🥇 VÍTĚZ", badgeEliminated: "❌ VYŘAZEN", badgeNotFinished: "🥈 Nedoběhl"
-        },
-        en: {
-            profileLabel: "Your racing name: ", mainTitle: "Voice Race: Knockout Tug-of-War",
-            btnSolo: "🏃 Play Solo (vs PC)", btnOnline: "🌐 Online Multiplayer", titleSoloSetup: "Solo Game Settings",
-            lblDiff: "AI Difficulty: ", lblTrack: "Track Length: ", lblMode: "Game Mode: ",
-            lblLangA: "Language A (Game speaks): ", lblLangB: "Language B (You speak): ",
-            btnStartStadion: "Enter Stadium", btnBack: "← Back", titleOnlineBranch: "Online Lobby",
-            btnCreateRoom: "➕ Create New Game", btnJoinRoom: "🔑 Join Game", btnBackMain: "← Back to Main Menu",
-            titleCreateRoom: "Create New Room", lblMaxPlayers: "Max Players: ",
-            btnCreateExec: "Create and Generate Code", titleJoinRoom: "Enter Game Code", btnJoinExec: "Enter Room",
-            btnStartMatch: "START RACE", btnRepeat: "🔁 Repeat Pronunciation", lblReplay: "Want to play again?",
-            btnRematch: "Yes, New Game", btnToMenu: "No, Main Menu", thPlayer: "Player", thScore: "Score (Points)",
-            thLives: "Remaining Lives", thResult: "Result", titleStats: "Match Scoreboard",
-            diffEasy: "Easy (Slow AI)", diffMed: "Medium (Balanced)", diffHard: "Hard (Fast Machine)",
-            trackShort: "Short (7 hurdles)", trackMed: "Medium (15 hurdles)", trackLong: "Long (30 hurdles)",
-            modeClassic: "Classic (Digit -> Word)", modeTrans: "Interpretation (Voice A -> Answer B)",
-            statusReady: "Get ready...", statusReadyStart: "Everyone is here. Start the race!",
-            statusWaitHost: "Waiting for the host to start...", statusGo: "GO!!!", statusKick: "💥 KICK! 💥",
-            statusKO: "💀 K.O. 💀", statusListening: "🔊 LISTEN...", statusHearing: "Hearing: ",
-            roomLabel: "Room: ", soloLabel: "Solo: ", winnerText: "🎉 You Won! 🎉", loserText: "💀 Winner is: ",
-            badgeFinished: "🥇 WINNER", badgeEliminated: "❌ ELIMINATED", badgeNotFinished: "🥈 DNF"
-        },
-        de: {
-            profileLabel: "Dein Rennname: ", mainTitle: "Sprachrennen: Knockout-Tauziehen",
-            btnSolo: "🏃 Solo spielen (vs. PC)", btnOnline: "🌐 Online-Multiplayer", titleSoloSetup: "Solo-Spieleinstellungen",
-            lblDiff: "KI-Schwierigkeit: ", lblTrack: "Streckenlänge: ", lblMode: "Spielmodus: ",
-            lblLangA: "Sprache A (Das Spiel spricht): ", lblLangB: "Sprache B (Du sprichst): ",
-            btnStartStadion: "Stadion betreten", btnBack: "← Zurück", titleOnlineBranch: "Online-Lobby",
-            btnCreateRoom: "➕ Neues Spiel erstellen", btnJoinRoom: "🔑 Spiel beitreten", btnBackMain: "← Zurück zum Hauptmenü",
-            titleCreateRoom: "Neuen Raum erstellen", lblMaxPlayers: "Maximale Spielerzahl: ",
-            btnCreateExec: "Erstellen und Code generieren", titleJoinRoom: "Spielcode eingeben", btnJoinExec: "Raum betreten",
-            btnStartMatch: "RENNEN STARTEN", btnRepeat: "🔁 Aussprache wiederholen", lblReplay: "Möchtest du noch einmal spielen?",
-            btnRematch: "Ja, neues Spiel", btnToMenu: "Nein, zum Hauptmenü", thPlayer: "Spieler", thScore: "Punkte",
-            thLives: "Verbleibende Leben", thResult: "Ergebnis", titleStats: "Spiel-Ergebnisliste",
-            diffEasy: "Leicht (Langsame KI)", diffMed: "Mittel (Ausgeglichen)", diffHard: "Schwer (Schnelle Maschine)",
-            trackShort: "Kurz (7 Hürden)", trackMed: "Mittel (15 Hürden)", trackLong: "Lang (30 Hürden)",
-            modeClassic: "Klassisch (Ziffer -> Wort)", modeTrans: "Dolmetschen (Stimme A -> Antwort B)",
-            statusReady: "Mach dich bereit...", statusReadyStart: "Alle sind da. Starte das Rennen!",
-            statusWaitHost: "Warte auf den Host, um das Rennen zu starten...", statusGo: "LOS!!!", statusKick: "💥 KICK! 💥",
-            statusKO: "💀 K.O. 💀", statusListening: "🔊 ZUHÖREN...", statusHearing: "Ich höre: ",
-            roomLabel: "Raum: ", soloLabel: "Solo: ", winnerText: "🎉 Du hast gewonnen! 🎉", loserText: "💀 Gewinner ist: ",
-            badgeFinished: "🥇 GEWINNER", badgeEliminated: "❌ AUSGESCHIEDEN", badgeNotFinished: "🥈 Nicht im Ziel"
-        },
-        fr: {
-            profileLabel: "Votre nom de course : ", mainTitle: "Course Vocale : Tir à la Corde Éliminatoire",
-            btnSolo: "🏃 Jouer Solo (vs PC)", btnOnline: "🌐 Multijoueur en ligne", titleSoloSetup: "Paramètres du jeu Solo",
-            lblDiff: "Difficulté de l'IA : ", lblTrack: "Longueur de la piste : ", lblMode: "Mode de jeu : ",
-            lblLangA: "Langue A (Le jeu parle) : ", lblLangB: "Langue B (Vous parlez) : ",
-            btnStartStadion: "Entrer dans le stade", btnBack: "← Retour", titleOnlineBranch: "Lobby en ligne",
-            btnCreateRoom: "➕ Créer une nouvelle partie", btnJoinRoom: "🔑 Rejoindre une partie", btnBackMain: "← Retour au menu principal",
-            titleCreateRoom: "Créer un salon", lblMaxPlayers: "Joueurs max : ",
-            btnCreateExec: "Créer et générer le code", titleJoinRoom: "Entrer le code du jeu", btnJoinExec: "Entrer dans le salon",
-            btnStartMatch: "DÉMARRER LA COURSE", btnRepeat: "🔁 Répéter la prononciation", lblReplay: "Voulez-vous rejouer ?",
-            btnRematch: "Oui, nouvelle partie", btnToMenu: "Non, menu principal", thPlayer: "Joueur", thScore: "Score (Points)",
-            thLives: "Vies restantes", thResult: "Résultat", titleStats: "Tableau des scores",
-            diffEasy: "Facile (IA lente)", diffMed: "Moyen (Équilibré)", diffHard: "Difficile (Machine rapide)",
-            trackShort: "Court (7 haies)", trackMed: "Moyen (15 haies)", trackLong: "Long (30 haies)",
-            modeClassic: "Classique (Chiffre -> Mot)", modeTrans: "Interprétation (Voix A -> Réponse B)",
-            statusReady: "Préparez-vous...", statusReadyStart: "Tout le monde est là. Démarrez la course !",
-            statusWaitHost: "En attente de l'hôte...", statusGo: "ALLEZ !!!", statusKick: "💥 CHUTE ! 💥",
-            statusKO: "💀 K.O. 💀", statusListening: "🔊 ÉCOUTER...", statusHearing: "J'entends : ",
-            roomLabel: "Salon : ", soloLabel: "Solo : ", winnerText: "🎉 Vous avez gagné ! 🎉", loserText: "💀 Le gagnant est : ",
-            badgeFinished: "🥇 VAINQUEUR", badgeEliminated: "❌ ÉLIMINÉ", badgeNotFinished: "🥈 Pas fini"
-        },
-        es: {
-            profileLabel: "Tu nombre de carrera: ", mainTitle: "Carrera de Voz: Tiro con Cuerda Eliminatorio",
-            btnSolo: "🏃 Jugar Solo (vs PC)", btnOnline: "🌐 Multijugador Online", titleSoloSetup: "Ajustes de Juego Solo",
-            lblDiff: "Dificultad de IA: ", lblTrack: "Longitud de Pista: ", lblMode: "Modo de Juego: ",
-            lblLangA: "Idioma A (El juego habla): ", lblLangB: "Idioma B (Tú hablas): ",
-            btnStartStadion: "Entrar al Estadio", btnBack: "← Volver", titleOnlineBranch: "Lobby Online",
-            btnCreateRoom: "➕ Crear Nueva Partida", btnJoinRoom: "🔑 Unirse a Partida", btnBackMain: "← Volver al Menú Principal",
-            titleCreateRoom: "Crear Nueva Sala", lblMaxPlayers: "Máx. Jugadores: ",
-            btnCreateExec: "Crear y Generar Código", titleJoinRoom: "Ingresar Código de Juego", btnJoinExec: "Entrar a la Sala",
-            btnStartMatch: "INICIAR CARRERA", btnRepeat: "🔁 Repetir Pronunciación", lblReplay: "¿Quieres jugar de nuevo?",
-            btnRematch: "Sí, Nueva Partida", btnToMenu: "No, Menú Principal", thPlayer: "Jugador", thScore: "Puntuación",
-            thLives: "Vidas Restantes", thResult: "Resultado", titleStats: "Tabla de Clasificación",
-            diffEasy: "Fácil (IA lenta)", diffMed: "Media (Equilibrada)", diffHard: "Difícil (Máquina rápida)",
-            trackShort: "Corta (7 obstáculos)", trackMed: "Media (15 obstáculos)", trackLong: "Larga (30 obstáculos)",
-            modeClassic: "Clásico (Dígito -> Palabra)", modeTrans: "Interpretación (Voz A -> Respuesta B)",
-            statusReady: "Prepárate...", statusReadyStart: "Todos están aquí. ¡Inicia la carrera!",
-            statusWaitHost: "Esperando que el anfitrión inicie...", statusGo: "¡¡¡CORRE!!!", statusKick: "💥 ¡TROPIEZO! 💥",
-            statusKO: "💀 K.O. 💀", statusListening: "🔊 ESCUCHA...", statusHearing: "Escucho: ",
-            roomLabel: "Sala: ", soloLabel: "Solo: ", winnerText: "🎉 ¡Ganaste la carrera! 🎉", loserText: "💀 El ganador es: ",
-            badgeFinished: "🥇 GANADOR", badgeEliminated: "❌ ELIMINADO", badgeNotFinished: "🥈 No terminó"
-        },
-        fi: {
-            profileLabel: "Kilpajuoksijanimesi: ", mainTitle: "Äänikisa: Pudotusköysiveto",
-            btnSolo: "🏃 Pelaa yksin (vs tietokone)", btnOnline: "🌐 Verkkomoninpeli", titleSoloSetup: "Yksinpelin asetukset",
-            lblDiff: "Tietokoneen vaikeustaso: ", lblTrack: "Radan pituus: ", lblMode: "Pelitila: ",
-            lblLangA: "Kieli A (Peli puhuu): ", lblLangB: "Kieli B (Sinä puhut): ",
-            btnStartStadion: "Astu stadionille", btnBack: "← Takaisin", titleOnlineBranch: "Verkkolobby",
-            btnCreateRoom: "➕ Luo uusi peli", btnJoinRoom: "🔑 Liity peliin", btnBackMain: "← Takaisin päävalikkoon",
-            titleCreateRoom: "Luo uusi huone", lblMaxPlayers: "Pelaajien enimmäismäärä: ",
-            btnCreateExec: "Luo huone ja koodi", titleJoinRoom: "Syötä pelikoodi", btnJoinExec: "Astu huoneeseen",
-            btnStartMatch: "ALOITA KISA", btnRepeat: "🔁 Toista ääntäminen", lblReplay: "Haluatko pelata uudelleen?",
-            btnRematch: "Kyllä, uusi peli", btnToMenu: "Ei, päävalikkoon", thPlayer: "Pelaaja", thScore: "Pisteet",
-            thLives: "Elämät jäljellä", thResult: "Tulos", titleStats: "Ottelun tulostaulukko",
-            diffEasy: "Helppo (Hidas AI)", diffMed: "Keskitaso (Tasapainoinen)", diffHard: "Vaikea (Nopea kone)",
-            trackShort: "Lyhyt (7 estettä)", trackMed: "Keskitaso (15 estettä)", trackLong: "Pitkä (30 estettä)",
-            modeClassic: "Klassinen (Numero -> Sana)", modeTrans: "Tulkkaus (Ääni A -> Vastaus B)",
-            statusReady: "Valmistaudu...", statusReadyStart: "Kaikki ovat paikalla. Aloita kisa!",
-            statusWaitHost: "Odotetaan, että huoneen luoja aloittaa kisan...", statusGo: "JUOKSE!!!", statusKick: "💥 JALKAMURSKA! 💥",
-            statusKO: "💀 K.O. 💀", statusListening: "🔊 KUUNTELE...", statusHearing: "Kuulen: ",
-            roomLabel: "Huone: ", soloLabel: "Solo: ", winnerText: "🎉 Sinä voitit! 🎉", loserText: "💀 Voittaja on: ",
-            badgeFinished: "🥇 VOITTAJA", badgeEliminated: "❌ PUDOTETTU", badgeNotFinished: "🥈 Ei maalissa"
+        'cs': {
+            soloLabel: "[SOLO]", roomLabel: "Místnost:", statusReady: "Připraven ke startu. Klikněte na Start Match!",
+            statusReadyStart: "Všichni hráči připojeni! Spusťte zápas.", statusWaitHost: "Čeká se na hostitele až odstartuje zápas...",
+            statusGo: "BĚŽ!", statusHearing: "Slyším:", statusListening: "🎤 MLUVTE NYNÍ...", statusKick: "💥 ZAKOPNUTÍ!",
+            statusKO: "💀 VYŘAZEN!", badgeEliminated: "ELIMINOVÁN", badgeFinished: "DOKONČIL", badgeNotFinished: "NEDOBĚHL",
+            winnerText: "🏆 VYHRÁL JSTE!", loserText: "❌ PROHRÁL JSTE! Vítěz:"
         }
     };
+    function setUILanguage(lang) {} 
+    function checkAndConsumeGameCredit() { return true; } // Simulace kreditu hratelnosti
 
-    function setUILanguage(lang) {
-        currentUILang = lang;
-        const t = uiTexts[lang];
-        if(!t) return;
-
-        // Statické texty
-        document.getElementById('lbl-profile').textContent = t.profileLabel;
-        document.getElementById('main-title').textContent = t.mainTitle;
-        document.getElementById('main-choose-solo').textContent = t.btnSolo;
-        document.getElementById('main-choose-online').textContent = t.btnOnline;
-        document.getElementById('title-solo-setup').textContent = t.titleSoloSetup;
-        document.getElementById('lbl-diff').textContent = t.lblDiff;
-        document.getElementById('lbl-track-solo').textContent = t.lblTrack;
-        document.getElementById('lbl-mode-solo').textContent = t.lblMode;
-        document.getElementById('lbl-lang-solo-a').textContent = t.lblLangA;
-        document.getElementById('lbl-lang-solo-b').textContent = t.lblLangB;
-        document.getElementById('solo-start-game-btn').textContent = t.btnStartStadion;
-        document.getElementById('title-online-branch').textContent = t.titleOnlineBranch;
-        document.getElementById('online-go-create').textContent = t.btnCreateRoom;
-        document.getElementById('online-go-join').textContent = t.btnJoinRoom;
-        document.getElementById('title-online-create').textContent = t.titleCreateRoom;
-        document.getElementById('lbl-max-players').textContent = t.lblMaxPlayers;
-        document.getElementById('lbl-track-online').textContent = t.lblTrack;
-        document.getElementById('lbl-mode-online').textContent = t.lblMode;
-        document.getElementById('lbl-lang-online-a').textContent = t.lblLangA; // OPRAVENO Z t.lblLangOnlineA
-        document.getElementById('lbl-lang-online-b').textContent = t.lblLangB; // OPRAVENO Z t.lblLangOnlineB
-        document.getElementById('create-room-execute-btn').textContent = t.btnCreateExec;
-        document.getElementById('title-online-join').textContent = t.titleJoinRoom;
-        document.getElementById('join-room-execute-btn').textContent = t.btnJoinExec;
-        document.getElementById('start-match-btn').textContent = t.btnStartMatch;
-        document.getElementById('repeat-voice-btn').innerHTML = t.btnRepeat;
-        document.getElementById('lbl-replay').textContent = t.lblReplay;
-        document.getElementById('rematch-btn').textContent = t.btnRematch;
-        document.getElementById('btn-to-menu').textContent = t.btnToMenu;
-        document.getElementById('title-stats').textContent = t.titleStats;
-        
-        document.getElementById('th-player').textContent = t.thPlayer;
-        document.getElementById('th-score').textContent = t.thScore;
-        document.getElementById('th-lives').textContent = t.thLives;
-        document.getElementById('th-result').textContent = t.thResult;
-
-        // Selektory / Optiony podle tříd
-        document.querySelectorAll('.opt-diff-easy').forEach(el => el.textContent = t.diffEasy);
-        document.querySelectorAll('.opt-diff-med').forEach(el => el.textContent = t.diffMed);
-        document.querySelectorAll('.opt-diff-hard').forEach(el => el.textContent = t.diffHard);
-        document.querySelectorAll('.opt-track-7').forEach(el => el.textContent = t.trackShort);
-        document.querySelectorAll('.opt-track-15').forEach(el => el.textContent = t.trackMed);
-        document.querySelectorAll('.opt-track-30').forEach(el => el.textContent = t.trackLong);
-        document.querySelectorAll('.opt-mode-classic').forEach(el => el.textContent = t.modeClassic);
-        document.querySelectorAll('.opt-mode-trans').forEach(el => el.textContent = t.modeTrans);
-        document.querySelectorAll('.btn-back').forEach(el => el.textContent = t.btnBack);
-        document.querySelectorAll('.btn-back-main').forEach(el => el.textContent = t.btnBackMain);
-
-        if(!gameStarted) statusEl.textContent = t.statusReady;
-    }
-
-    // --- RENDER & GAMEPLAY CONFIG ---
+    // --- RENDER & GAMEPLAY CONFIG (HRA 1) ---
     const canvas = document.getElementById('game-canvas');
     const ctx = canvas.getContext('2d');
     
@@ -565,7 +425,7 @@ function selectGame(gameId) {
     let myRole = 'p1'; 
     let maxPlayersInRoom = 2;
     let botInterval = null;
-    let tripTimeout = null; // NOVÉ: Časovač pro penalizaci zakopnutí
+    let tripTimeout = null; 
     let lastSpokenNumber = 0; 
 
     let myState = { score: 0, lives: 3, currentNumber: 0, state: 'running', y: 0, jumpProgress: 0, worldX: START_WORLD_X, name: "Běžec" };
@@ -578,12 +438,62 @@ function selectGame(gameId) {
     const startMatchBtn = document.getElementById('start-match-btn');
     const hudContainer = document.getElementById('hud-players-container');
 
+    // Nastavení viditelnosti jazyků při volbě režimu
     document.getElementById('game-mode-type-solo').addEventListener('change', (e) => {
         document.getElementById('solo-lang-b-box').style.display = (e.target.value === 'translation') ? 'block' : 'none';
     });
     document.getElementById('game-mode-type-online').addEventListener('change', (e) => {
         document.getElementById('online-lang-b-box').style.display = (e.target.value === 'translation') ? 'block' : 'none';
     });
+
+    // --- FIREBASE AUTHENTICATION LOGIC ---
+    if (typeof firebase !== 'undefined') {
+        const emailInput = document.getElementById('auth-email');
+        const passwordInput = document.getElementById('auth-password');
+
+        // Sledování stavu přihlášení
+        firebase.auth().onAuthStateChanged((user) => {
+            if (user) {
+                let userDisplayName = user.displayName || user.email.split('@')[0];
+                document.getElementById('player-name-input').value = userDisplayName;
+                document.getElementById('user-profile-name').textContent = userDisplayName;
+                myState.name = userDisplayName;
+
+                document.getElementById('global-profile-box').style.display = 'flex';
+                changeScreen('screen-main');
+            } else {
+                document.getElementById('global-profile-box').style.display = 'none';
+                changeScreen('screen-auth');
+            }
+        });
+
+        // Registrace
+        document.getElementById('btn-email-register').addEventListener('click', () => {
+            const email = emailInput.value.trim(); const password = passwordInput.value;
+            if (!email || !password) return alert('Vyplňte e-mail a heslo.');
+            firebase.auth().createUserWithEmailAndPassword(email, password).catch(err => alert(err.message));
+        });
+
+        // Přihlášení e-mailem
+        document.getElementById('btn-email-login').addEventListener('click', () => {
+            const email = emailInput.value.trim(); const password = passwordInput.value;
+            if (!email || !password) return alert('Vyplňte e-mail a heslo.');
+            firebase.auth().signInWithEmailAndPassword(email, password).catch(err => alert(err.message));
+        });
+
+        // Přihlášení přes Google
+        document.getElementById('btn-google-login').addEventListener('click', () => {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            provider.setCustomParameters({ prompt: 'select_account' });
+            firebase.auth().signInWithPopup(provider).catch(err => alert(err.message));
+        });
+    }
+
+    function logoutUser() {
+        if (typeof firebase !== 'undefined') {
+            firebase.auth().signOut().then(() => { changeScreen('screen-auth'); });
+        }
+    }
 
     // --- HLASOVÁ REKOGNICE (JAZYK B) ---
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -594,6 +504,7 @@ function selectGame(gameId) {
         recognition.interimResults = true; 
         
         recognition.onresult = (e) => {
+            if (game2Active) return; // Pokud běží hra 2, ignorovat hlavní handler
             if (!gameStarted || myState.state !== 'running' || myState.lives <= 0) return;
             let fullTranscript = '';
             for (let i = e.resultIndex; i < e.results.length; ++i) {
@@ -603,6 +514,7 @@ function selectGame(gameId) {
         };
         
         recognition.onend = () => { 
+            if (game2Active) return;
             if (gameStarted && myState.lives > 0 && myState.state !== 'won') recognition.start(); 
         };
     }
@@ -634,24 +546,26 @@ function selectGame(gameId) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(screenId).classList.add('active');
         
-        if(['screen-game', 'screen-victory'].includes(screenId)) {
+        // Skrýt horní profil box na herních plochách pro čisté rozhraní
+        if(['screen-game', 'screen-game2-play', 'screen-victory', 'screen-auth'].includes(screenId)) {
             document.getElementById('global-profile-box').style.display = 'none';
         } else {
-            document.getElementById('global-profile-box').style.display = 'block';
+            if (typeof firebase !== 'undefined' && firebase.auth().currentUser) {
+                document.getElementById('global-profile-box').style.display = 'flex';
+            }
         }
         if(screenId !== 'screen-game') resetGameEngine();
     }
 
     function resetGameEngine() {
-    if(typeof game2Active !== 'undefined') game2Active = false;
         gameStarted = false;
         lastSpokenNumber = 0;
         repeatBtn.style.display = 'none';
         if(recognition) try { recognition.stop(); } catch(e){}
         if(window.speechSynthesis) window.speechSynthesis.cancel();
         if(botInterval) clearInterval(botInterval);
-        if(tripTimeout) clearTimeout(tripTimeout); // Vyčištění časovače pádů
-        if(roomRef) roomRef.off();
+        if(tripTimeout) clearTimeout(tripTimeout); 
+        if(roomRef && db) roomRef.off();
         
         let chosenName = document.getElementById('player-name-input').value.trim() || "Běžec";
         myState = { score: 0, lives: 3, currentNumber: 0, state: 'running', y: 0, jumpProgress: 0, worldX: START_WORLD_X, name: chosenName };
@@ -664,7 +578,6 @@ function selectGame(gameId) {
     document.getElementById('online-go-create').addEventListener('click', () => changeScreen('screen-online-create'));
     document.getElementById('online-go-join').addEventListener('click', () => changeScreen('screen-online-join'));
 
-    // Tlačítka zpět
     document.querySelectorAll('.btn-back').forEach(btn => {
         btn.addEventListener('click', () => {
             if (document.getElementById('screen-solo-setup').classList.contains('active') || 
@@ -676,10 +589,10 @@ function selectGame(gameId) {
         });
     });
     document.querySelectorAll('.btn-back-main').forEach(btn => {
-        btn.addEventListener('click', () => changeScreen('screen-main'));
+        btn.addEventListener('click', () => { game2Active = false; changeScreen('screen-main'); });
     });
 
-    // START SÓLO
+    // START SÓLO (HRA 1)
     document.getElementById('solo-start-game-btn').addEventListener('click', () => {
         gameMode = 'solo'; myRole = 'p1';
         currentModeType = document.getElementById('game-mode-type-solo').value;
@@ -700,8 +613,9 @@ function selectGame(gameId) {
         renderHUD();
     });
 
-    // ONLINE CREATE
+    // ONLINE CREATE (HRA 1)
     document.getElementById('create-room-execute-btn').addEventListener('click', () => {
+        if(!db) return alert("Firebase není správně připojen!");
         gameMode = 'online';
         const code = Math.floor(1000 + Math.random() * 9000).toString();
         maxPlayersInRoom = parseInt(document.getElementById('player-count-select').value);
@@ -726,8 +640,9 @@ function selectGame(gameId) {
         listenToRoom();
     });
 
-    // ONLINE JOIN
+    // ONLINE JOIN (HRA 1)
     document.getElementById('join-room-execute-btn').addEventListener('click', () => {
+        if(!db) return alert("Firebase není připojen!");
         gameMode = 'online';
         const code = document.getElementById('room-code-input').value.trim();
         if(!code) return;
@@ -759,6 +674,7 @@ function selectGame(gameId) {
     });
 
     function listenToRoom() {
+        if(!roomRef) return;
         roomRef.on('value', (snap) => {
             const data = snap.val(); if(!data) return;
 
@@ -829,7 +745,7 @@ function selectGame(gameId) {
 
     function executeStart() {
         if (!checkAndConsumeGameCredit()) {
-            changeScreen('screen-global-hub'); 
+            changeScreen('screen-main'); 
             return;
         }
 
@@ -948,7 +864,7 @@ function selectGame(gameId) {
 
     function showVictoryScreen(winnerId, allPlayersList) {
         if(botInterval) clearInterval(botInterval);
-        if(tripTimeout) clearTimeout(tripTimeout); // Vyčištění timeoutu
+        if(tripTimeout) clearTimeout(tripTimeout); 
         if(recognition) try { recognition.stop(); } catch(e){}
         if(window.speechSynthesis) window.speechSynthesis.cancel();
         repeatBtn.style.display = 'none';
@@ -1013,7 +929,7 @@ function selectGame(gameId) {
 
     if (SpeechRecognition) {
         recognition.onspeechend = () => {
-            // Pokud hráč právě mluvil, naplánujeme pád, ale nejdříve smažeme starý časovač
+            if (game2Active) return;
             if (tripTimeout) clearTimeout(tripTimeout);
             
             tripTimeout = setTimeout(() => {
@@ -1025,7 +941,6 @@ function selectGame(gameId) {
     }
 
     function triggerJump() {
-        // OPRAVENO: Pokud hráč uhodl správně, okamžitě zrušíme naplánované zakopnutí!
         if (tripTimeout) {
             clearTimeout(tripTimeout);
             tripTimeout = null;
@@ -1071,7 +986,7 @@ function selectGame(gameId) {
     }
 
     function sendStateToFirebase() {
-        if (gameMode === 'online' && roomRef) {
+        if (gameMode === 'online' && roomRef && db) {
             roomRef.child(myRole).update({
                 score: myState.score, lives: myState.lives, state: myState.state,
                 y: myState.y, jumpProgress: myState.jumpProgress, worldX: myState.worldX,
@@ -1085,9 +1000,9 @@ function selectGame(gameId) {
         if (isTripping) {
             ctx.translate(x + 12, y - 10); ctx.rotate(Math.PI / 2); ctx.translate(-(x + 12), -(y - 10));
         }
-        ctx.fillStyle = "rgba(0,0,0,0.15)"; ctx.beginPath(); ctx.ellipse(x + 12, y, 12, 4, 0, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = "rgba(255,255,255,0.9)"; ctx.font = "bold 10px sans-serif"; ctx.textAlign = "center";
-        ctx.fillText(name, x + 12, y - 46, 70); // Přidán max-width pro oříznutí dlouhých jmen
+        ctx.fillStyle = "rgba(0,0,0,0.07)"; ctx.beginPath(); ctx.ellipse(x + 12, y, 12, 4, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "#0f172a"; ctx.font = "bold 10px sans-serif"; ctx.textAlign = "center";
+        ctx.fillText(name, x + 12, y - 46, 70); 
         ctx.fillStyle = "#ffcc99"; ctx.beginPath(); ctx.arc(x + 12, y - 34, 6, 0, Math.PI * 2); ctx.fill();
         ctx.fillStyle = color; ctx.beginPath();
         ctx.roundRect ? ctx.roundRect(x + 3, y - 28, 18, 16, 4) : ctx.fillRect(x + 3, y - 28, 18, 16); ctx.fill();
@@ -1105,10 +1020,10 @@ function selectGame(gameId) {
     }
 
     function drawHurdle(x, y) {
-        ctx.save(); ctx.strokeStyle = "#333"; ctx.lineWidth = 3; ctx.beginPath();
+        ctx.save(); ctx.strokeStyle = "#475569"; ctx.lineWidth = 3; ctx.beginPath();
         ctx.moveTo(x - 5, y); ctx.lineTo(x + 15, y); ctx.moveTo(x, y); ctx.lineTo(x, y - 22); ctx.moveTo(x + 10, y); ctx.lineTo(x + 10, y - 22);
         ctx.stroke();
-        ctx.fillStyle = "#e74c3c"; ctx.fillRect(x - 5, y - 22, 20, 5);
+        ctx.fillStyle = "#ef4444"; ctx.fillRect(x - 5, y - 22, 20, 5);
         ctx.fillStyle = "#fff"; ctx.fillRect(x + 3, y - 22, 4, 5); ctx.restore();
     }
 
@@ -1125,10 +1040,11 @@ function selectGame(gameId) {
 
         let trackTopY = 120; let trackHeight = 140; let trackBottomY = trackTopY + trackHeight;
 
-        ctx.fillStyle = "#d35400"; ctx.fillRect(0, trackTopY, canvas.width, trackHeight);
+        // Bright Clay Track representation
+        ctx.fillStyle = "#f97316"; ctx.fillRect(0, trackTopY, canvas.width, trackHeight);
         ctx.fillStyle = "#ffffff"; ctx.fillRect(0, trackTopY, canvas.width, 4); ctx.fillRect(0, trackBottomY - 4, canvas.width, 4);
 
-        ctx.fillStyle = "rgba(255,255,255,0.6)";
+        ctx.fillStyle = "rgba(255,255,255,0.7)";
         let dashWidth = 30; let dashGap = 30;
         let startDashX = -(cameraX % (dashWidth + dashGap));
         for (let sx = startDashX; sx < canvas.width; sx += (dashWidth + dashGap)) {
@@ -1170,6 +1086,8 @@ function selectGame(gameId) {
     }
 
     function gameLoop() {
+        if (game2Active) return; // Zamezení běhu smyčky pokud je aktivní Hra 2
+
         draw();
         if (gameStarted) {
             checkWinConditions();
@@ -1197,292 +1115,285 @@ function selectGame(gameId) {
         }
     }
 
-    // Inicializace výchozího jazyka na češtinu a vykreslení základního Canvasu
-    setUILanguage('cs');
+    // Inicializace výchozího zobrazení
     draw();
-        // ==========================================
-// LOGIKA DRUHÉ HRY: POLÁRNÍ PEXESO (KRY)
-// ==========================================
-let game2Active = false;
-let game2Canvas = document.getElementById('game2-canvas');
-let game2Ctx = game2Canvas.getContext('2d');
 
-let game2Lang = 'en-US';
-let game2Sequence = [];
-let game2PlayerIndex = 0;
-let game2CurrentLevelSize = 3;
-let game2Lives = 3;
-let game2Score = 0;
 
-// Stav herní fáze: 'computer-speaking' | 'player-repeating' | 'jumping' | 'falling' | 'game-over'
-let game2Phase = 'computer-speaking'; 
+    // ==========================================
+    // LOGIKA DRUHÉ HRY: POLÁRNÍ PEXESO (KRY)
+    // ==========================================
+    let game2Active = false;
+    const game2Canvas = document.getElementById('game2-canvas');
+    const game2Ctx = game2Canvas.getContext('2d');
 
-let game2PlayerVisual = { x: 200, y: 180, targetX: 200, jumpProgress: 0 };
-let game2CameraX = 0;
-let game2TargetCameraX = 0;
+    let game2Lang = 'en-US';
+    let game2Sequence = [];
+    let game2PlayerIndex = 0;
+    let game2CurrentLevelSize = 3;
+    let game2Lives = 3;
+    let game2Score = 0;
+    let game2Phase = 'computer-speaking'; 
 
-function game2StartGame() {
-    game2Active = true;
-    game2Lives = 3;
-    game2Score = 0;
-    game2CurrentLevelSize = parseInt(document.getElementById('game2-difficulty').value);
-    game2Lang = document.getElementById('game2-lang').value;
-    
-    game2PlayerVisual = { x: 200, y: 180, targetX: 200, jumpProgress: 0 };
-    game2CameraX = 0; game2TargetCameraX = 0;
-    
-    changeScreen('screen-game2-play');
-    
-    if (recognition) {
-        try { recognition.stop(); } catch(e){}
-        recognition.lang = game2Lang;
-        // Přepsání onresult dočasně pro Hru 2
-        recognition.onresult = (e) => {
-            if (!game2Active || game2Phase !== 'player-repeating' || game2Lives <= 0) return;
-            let transcript = '';
-            for (let i = e.resultIndex; i < e.results.length; ++i) {
-                transcript += e.results[i][0].transcript;
-            }
-            game2HandleVoiceInput(transcript);
-        };
+    let game2PlayerVisual = { x: 200, y: 180, targetX: 200, jumpProgress: 0 };
+    let game2CameraX = 0;
+    let game2TargetCameraX = 0;
+
+    function game2InitSetupScreen() {
+        changeScreen('screen-game2-setup');
     }
-    
-    game2NextRound();
-    requestAnimationFrame(game2Loop);
-}
 
-function game2NextRound() {
-    game2Phase = 'computer-speaking';
-    document.getElementById('game2-repeat-btn').style.display = 'none';
-    document.getElementById('game2-status').textContent = "🔊 POČÍTAČ MLUVÍ, POSLOUCHEJ...";
-    document.getElementById('game2-status').style.color = "#f1c40f";
-    document.getElementById('game2-number-display').textContent = "???";
-    
-    // Vygenerování nové sekvence čísel (od 1 do 10)
-    game2Sequence = [];
-    for (let i = 0; i < game2CurrentLevelSize; i++) {
-        game2Sequence.push(Math.floor(Math.random() * 10) + 1);
+    function game2StartGame() {
+        game2Active = true;
+        game2Lives = 3;
+        game2Score = 0;
+        game2CurrentLevelSize = parseInt(document.getElementById('game2-difficulty').value);
+        game2Lang = document.getElementById('game2-lang').value;
+        
+        game2PlayerVisual = { x: 200, y: 180, targetX: 200, jumpProgress: 0 };
+        game2CameraX = 0; game2TargetCameraX = 0;
+        
+        document.getElementById('game2-hud-lives').textContent = "❤️ ".repeat(game2Lives) + "🖤 ".repeat(3 - game2Lives);
+        changeScreen('screen-game2-play');
+        
+        if (recognition) {
+            try { recognition.stop(); } catch(e){}
+            recognition.lang = game2Lang;
+            
+            recognition.onresult = (e) => {
+                if (!game2Active || game2Phase !== 'player-repeating' || game2Lives <= 0) return;
+                let transcript = '';
+                for (let i = e.resultIndex; i < e.results.length; ++i) {
+                    transcript += e.results[i][0].transcript;
+                }
+                game2HandleVoiceInput(transcript);
+            };
+        }
+        
+        game2NextRound();
+        requestAnimationFrame(game2Loop);
     }
-    game2PlayerIndex = 0;
-    
-    // Přehrát sekvenci s pauzami
-    setTimeout(() => { game2PlaySequenceStep(0); }, 800);
-}
 
-function game2PlaySequence() {
-    if(game2Phase === 'player-repeating') {
+    function game2NextRound() {
         game2Phase = 'computer-speaking';
         document.getElementById('game2-repeat-btn').style.display = 'none';
+        document.getElementById('game2-status').textContent = "🔊 POČÍTAČ MLUVÍ, POSLOUCHEJ...";
+        document.getElementById('game2-status').style.color = "#d97706";
+        document.getElementById('game2-number-display').textContent = "???";
+        
+        game2Sequence = [];
+        for (let i = 0; i < game2CurrentLevelSize; i++) {
+            game2Sequence.push(Math.floor(Math.random() * 10) + 1);
+        }
         game2PlayerIndex = 0;
-        game2PlaySequenceStep(0);
+        
+        setTimeout(() => { game2PlaySequenceStep(0); }, 800);
     }
-}
 
-function game2PlaySequenceStep(index) {
-    if (!game2Active || game2Lives <= 0) return;
-    
-    if (index >= game2Sequence.length) {
-        // Počítač domluvil, na řadě je hráč
-        game2Phase = 'player-repeating';
-        document.getElementById('game2-status').textContent = "🎤 OPAKUJ CELOU ŘADU ČÍSEL!";
-        document.getElementById('game2-status').style.color = "#2ecc71";
-        document.getElementById('game2-number-display').textContent = "Tvůj tah...";
-        document.getElementById('game2-repeat-btn').style.display = 'inline-block';
-        if(recognition) try { recognition.start(); } catch(e){}
-        return;
+    function game2PlaySequence() {
+        if(game2Phase === 'player-repeating') {
+            game2Phase = 'computer-speaking';
+            document.getElementById('game2-repeat-btn').style.display = 'none';
+            game2PlayerIndex = 0;
+            game2PlaySequenceStep(0);
+        }
     }
-    
-    let num = game2Sequence[index];
-    document.getElementById('game2-number-display').textContent = `🔊 [Číslo ${index + 1}]`;
-    
-    if (window.speechSynthesis) {
-        window.speechSynthesis.cancel();
-        let word = languageWordsText[game2Lang] ? languageWordsText[game2Lang][num] : num.toString();
-        let utterance = new SpeechSynthesisUtterance(word);
-        utterance.lang = game2Lang;
-        utterance.rate = 0.8;
-        utterance.onend = () => {
-            setTimeout(() => { game2PlaySequenceStep(index + 1); }, 400);
-        };
-        window.speechSynthesis.speak(utterance);
-    } else {
-        // Fallback pokud TTS nefunguje
-        setTimeout(() => { game2PlaySequenceStep(index + 1); }, 1000);
-    }
-}
 
-function game2HandleVoiceInput(rawText) {
-    const text = rawText.toLowerCase().replace(/[.,?!]/g, '').trim();
-    let expectedNum = game2Sequence[game2PlayerIndex];
-    let validAnswers = languageMaps1To10[game2Lang][expectedNum] || [expectedNum.toString()];
-    
-    document.getElementById('game2-number-display').textContent = `Slyším: "${text}"`;
-    
-    if (validAnswers.some(ans => text.includes(ans))) {
-        // Správné číslo!
-        game2PlayerIndex++;
-        if (game2PlayerIndex >= game2Sequence.length) {
-            // Úspěšně zopakoval celé pexeso -> Skok vpřed!
-            game2TriggerJump(true);
+    function game2PlaySequenceStep(index) {
+        if (!game2Active || game2Lives <= 0) return;
+        
+        if (index >= game2Sequence.length) {
+            game2Phase = 'player-repeating';
+            document.getElementById('game2-status').textContent = "🎤 OPAKUJ CELOU ŘADU ČÍSEL!";
+            document.getElementById('game2-status').style.color = "#16a34a";
+            document.getElementById('game2-number-display').textContent = "Tvůj tah...";
+            document.getElementById('game2-repeat-btn').style.display = 'inline-block';
+            if(recognition) try { recognition.start(); } catch(e){}
+            return;
+        }
+        
+        let num = game2Sequence[index];
+        document.getElementById('game2-number-display').textContent = `🔊 [Číslo ${index + 1}]`;
+        
+        if (window.speechSynthesis) {
+            window.speechSynthesis.cancel();
+            let word = languageWordsText[game2Lang] ? languageWordsText[game2Lang][num] : num.toString();
+            let utterance = new SpeechSynthesisUtterance(word);
+            utterance.lang = game2Lang;
+            utterance.rate = 0.8;
+            utterance.onend = () => {
+                setTimeout(() => { game2PlaySequenceStep(index + 1); }, 400);
+            };
+            window.speechSynthesis.speak(utterance);
         } else {
-            document.getElementById('game2-status').textContent = `✅ Správně! Zbývá ${game2Sequence.length - game2PlayerIndex} čísel...`;
-        }
-    } else {
-        // Pokud řekl úplně špatné slovo/číslo, které do sekvence nepatří
-        let jakékolivJinéČíslo = false;
-        // Rychlý test, jestli v textu vůbec bylo nějaké (ale chybné) číslo
-        for (let n = 1; n <= 10; n++) {
-            let answers = languageMaps1To10[game2Lang][n] || [n.toString()];
-            if (answers.some(ans => text.includes(ans)) && !validAnswers.some(ans => text.includes(ans))) {
-                jakékolivJinéČíslo = true;
-            }
-        }
-        
-        if(jakékolivJinéČíslo) {
-            game2TriggerJump(false); // Chybné číslo v řadě -> Pád do vody
+            setTimeout(() => { game2PlaySequenceStep(index + 1); }, 1000);
         }
     }
-}
 
-function game2TriggerJump(success) {
-    if(recognition) try { recognition.stop(); } catch(e){}
-    
-    if (success) {
-        game2Phase = 'jumping';
-        game2Score++;
-        game2CurrentLevelSize++; // S každým úspěchem se řada o 1 prodlouží!
-        game2PlayerVisual.targetX = game2PlayerVisual.x + 180;
-        game2TargetCameraX = game2PlayerVisual.targetX - 200;
+    function game2HandleVoiceInput(rawText) {
+        const text = rawText.toLowerCase().replace(/[.,?!]/g, '').trim();
+        let expectedNum = game2Sequence[game2PlayerIndex];
+        let validAnswers = languageMaps1To10[game2Lang][expectedNum] || [expectedNum.toString()];
         
-        let frame = 0;
-        let startX = game2PlayerVisual.x;
-        let jmp = setInterval(() => {
-            frame++; let p = frame / 30;
-            game2PlayerVisual.x = startX + (p * 180);
-            game2PlayerVisual.y = 180 - (4 * 70 * p * (1 - p)); // Parabola skoku
-            if(frame >= 30) {
-                clearInterval(jmp);
-                game2PlayerVisual.y = 180;
-                game2Phase = 'computer-speaking';
-                game2NextRound();
+        document.getElementById('game2-number-display').textContent = `Slyším: "${text}"`;
+        
+        if (validAnswers.some(ans => text.includes(ans))) {
+            game2PlayerIndex++;
+            if (game2PlayerIndex >= game2Sequence.length) {
+                game2TriggerJump(true);
+            } else {
+                document.getElementById('game2-status').textContent = `✅ Správně! Zbývá ${game2Sequence.length - game2PlayerIndex} čísel...`;
             }
-        }, 20);
-    } else {
-        game2Phase = 'falling';
-        game2Lives--;
-        document.getElementById('game2-hud-lives').textContent = "❤️ ".repeat(game2Lives) + "🖤 ".repeat(3 - game2Lives);
+        } else {
+            let jakékolivJinéČíslo = false;
+            for (let n = 1; n <= 10; n++) {
+                let answers = languageMaps1To10[game2Lang][n] || [n.toString()];
+                if (answers.some(ans => text.includes(ans)) && !validAnswers.some(ans => text.includes(ans))) {
+                    jakékolivJinéČíslo = true;
+                }
+            }
+            if(jakékolivJinéČíslo) {
+                game2TriggerJump(false); 
+            }
+        }
+    }
+
+    function game2TriggerJump(success) {
+        if(recognition) try { recognition.stop(); } catch(e){}
         
-        let frame = 0;
-        let startY = game2PlayerVisual.y;
-        let fall = setInterval(() => {
-            frame++;
-            game2PlayerVisual.y = startY + (frame * 1.5); // Žbluňk dolů
-            if(frame >= 20) {
-                clearInterval(fall);
-                if (game2Lives <= 0) {
-                    game2Phase = 'game-over';
-                    document.getElementById('game2-status').textContent = `💀 KONEC HRY! Dosáhl jsi skóre: ${game2Score}`;
-                    document.getElementById('game2-status').style.color = "#e74c3c";
-                    document.getElementById('game2-number-display').textContent = "Zkus to znovu přes tlačítko v Hubu.";
-                } else {
-                    // Respawn na aktuální kře
+        if (success) {
+            game2Phase = 'jumping';
+            game2Score++;
+            game2CurrentLevelSize++; 
+            game2PlayerVisual.targetX = game2PlayerVisual.x + 180;
+            game2TargetCameraX = game2PlayerVisual.targetX - 200;
+            
+            let frame = 0; let startX = game2PlayerVisual.x;
+            let jmp = setInterval(() => {
+                frame++; let p = frame / 30;
+                game2PlayerVisual.x = startX + (p * 180);
+                game2PlayerVisual.y = 180 - (4 * 70 * p * (1 - p)); 
+                if(frame >= 30) {
+                    clearInterval(jmp);
                     game2PlayerVisual.y = 180;
                     game2Phase = 'computer-speaking';
                     game2NextRound();
                 }
-            }
-        }, 20);
+            }, 20);
+        } else {
+            game2Phase = 'falling';
+            game2Lives--;
+            document.getElementById('game2-hud-lives').textContent = "❤️ ".repeat(game2Lives) + "🖤 ".repeat(3 - game2Lives);
+            
+            let frame = 0; let startY = game2PlayerVisual.y;
+            let fall = setInterval(() => {
+                frame++;
+                game2PlayerVisual.y = startY + (frame * 1.5); 
+                if(frame >= 20) {
+                    clearInterval(fall);
+                    if (game2Lives <= 0) {
+                        game2Phase = 'game-over';
+                        document.getElementById('game2-status').textContent = `💀 KONEC HRY! Dosáhl jsi skóre: ${game2Score}`;
+                        document.getElementById('game2-status').style.color = "#ef4444";
+                        document.getElementById('game2-number-display').textContent = "Zkus to znovu přes tlačítko v Hubu.";
+                    } else {
+                        game2PlayerVisual.y = 180;
+                        game2Phase = 'computer-speaking';
+                        game2NextRound();
+                    }
+                }
+            }, 20);
+        }
     }
-}
 
-function game2Loop() {
-    if (!game2Active) return;
-    
-    // Hladký posun kamery za hráčem
-    game2CameraX += (game2TargetCameraX - game2CameraX) * 0.05;
-    
-    // Kreslení scény
-    game2Ctx.clearRect(0, 0, game2Canvas.width, game2Canvas.height);
-    
-    // Nakreslení moře (Pozadí už má tmavě modrou barvu z CSS)
-    // Nakreslení vln
-    game2Ctx.fillStyle = "rgba(255,255,255,0.05)";
-    for(let i = 0; i < 10; i++) {
-        let waveX = (Date.now() * 0.05 + i * 120) % (game2Canvas.width + 100) - 50;
-        game2Ctx.fillRect(waveX, 150 + (i%3)*20, 40, 4);
+    function game2Quit() {
+        game2Active = false;
+        if(recognition) try { recognition.stop(); } catch(e){}
+        changeScreen('screen-main');
     }
 
-    // Vykreslení ledových ker (každých 180 pixelů jedna kra)
-    for (let i = 0; i < game2Score + 5; i++) {
-        let kraWorldX = 200 + (i * 180);
-        let kraScreenX = kraWorldX - game2CameraX;
+    function game2Loop() {
+        if (!game2Active) return;
         
-        game2Ctx.fillStyle = "#e0f2fe";
+        game2CameraX += (game2TargetCameraX - game2CameraX) * 0.05;
+        game2Ctx.clearRect(0, 0, game2Canvas.width, game2Canvas.height);
+        
+        // Vykreslení vln ve světlém kontrastu (Bílé linky na světlém moři)
+        game2Ctx.fillStyle = "rgba(255,255,255,0.35)";
+        for(let i = 0; i < 10; i++) {
+            let waveX = (Date.now() * 0.05 + i * 120) % (game2Canvas.width + 100) - 50;
+            game2Ctx.fillRect(waveX, 150 + (i%3)*20, 40, 4);
+        }
+
+        // Vykreslení ker
+        for (let i = 0; i < game2Score + 5; i++) {
+            let kraWorldX = 200 + (i * 180);
+            let kraScreenX = kraWorldX - game2CameraX;
+            
+            game2Ctx.fillStyle = "#ffffff"; // Zářivě bílé ledové kry
+            game2Ctx.beginPath();
+            game2Ctx.moveTo(kraScreenX - 40, 200);
+            game2Ctx.lineTo(kraScreenX + 40, 200);
+            game2Ctx.lineTo(kraScreenX + 55, 215);
+            game2Ctx.lineTo(kraScreenX + 30, 230);
+            game2Ctx.lineTo(kraScreenX - 30, 230);
+            game2Ctx.lineTo(kraScreenX - 55, 215);
+            game2Ctx.closePath();
+            game2Ctx.fill();
+            
+            // Stín kry
+            game2Ctx.fillStyle = "#e0f2fe";
+            game2Ctx.fill();
+            
+            // Text kry
+            game2Ctx.fillStyle = "#0369a1";
+            game2Ctx.font = "bold 10px sans-serif";
+            game2Ctx.fillText(`Kra ${i+1}`, kraScreenX - 14, 220);
+        }
+
+        // Vykreslení tučňáka
+        let pScreenX = game2PlayerVisual.x - game2CameraX;
+        let pScreenY = game2PlayerVisual.y;
+        
+        game2Ctx.save();
+        if(game2Phase === 'falling') {
+            game2Ctx.translate(pScreenX + 12, pScreenY - 10);
+            game2Ctx.rotate(Math.PI / 4);
+            game2Ctx.translate(-(pScreenX + 12), -(pScreenY - 10));
+        }
+        
+        // Tučňák - tělo
+        game2Ctx.fillStyle = "#0f172a";
         game2Ctx.beginPath();
-        // Nakreslení nepravidelného šestiúhelníku jako kry
-        game2Ctx.moveTo(kraScreenX - 40, 200);
-        game2Ctx.lineTo(kraScreenX + 40, 200);
-        game2Ctx.lineTo(kraScreenX + 55, 215);
-        game2Ctx.lineTo(kraScreenX + 30, 230);
-        game2Ctx.lineTo(kraScreenX - 30, 230);
-        game2Ctx.lineTo(kraScreenX - 55, 215);
-        game2Ctx.closePath();
+        game2Ctx.arc(pScreenX + 12, pScreenY - 20, 14, 0, Math.PI * 2);
         game2Ctx.fill();
         
-        // Stín pod krou
-        game2Ctx.fillStyle = "#bae6fd";
+        // Bříško
+        game2Ctx.fillStyle = "#ffffff";
+        game2Ctx.beginPath();
+        game2Ctx.arc(pScreenX + 12, pScreenY - 16, 9, 0, Math.PI * 2);
         game2Ctx.fill();
         
-        // Číslo platformy pro orientaci
-        game2Ctx.fillStyle = "#0369a1";
-        game2Ctx.font = "10px sans-serif";
-        game2Ctx.fillText(`Kra ${i+1}`, kraScreenX - 12, 220);
-    }
+        // Hlava
+        game2Ctx.fillStyle = "#0f172a";
+        game2Ctx.beginPath();
+        game2Ctx.arc(pScreenX + 12, pScreenY - 38, 8, 0, Math.PI * 2);
+        game2Ctx.fill();
+        
+        // Zobák
+        game2Ctx.fillStyle = "#f59e0b";
+        game2Ctx.beginPath();
+        game2Ctx.moveTo(pScreenX + 16, pScreenY - 39);
+        game2Ctx.lineTo(pScreenX + 25, pScreenY - 37);
+        game2Ctx.lineTo(pScreenX + 16, pScreenY - 35);
+        game2Ctx.fill();
+        
+        game2Ctx.restore();
 
-    // Vykreslení tučňáka / běžce
-    let pScreenX = game2PlayerVisual.x - game2CameraX;
-    let pScreenY = game2PlayerVisual.y;
-    
-    game2Ctx.save();
-    if(game2Phase === 'falling') {
-        game2Ctx.translate(pScreenX + 12, pScreenY - 10);
-        game2Ctx.rotate(Math.PI / 4);
-        game2Ctx.translate(-(pScreenX + 12), -(pScreenY - 10));
+        // OPRAVA OPRAVDU ZACYKLENÉ SMYČKY: Voláme rekurzivně pouze pexeso smyčku
+        if(game2Phase !== 'game-over' && game2Active) {
+            requestAnimationFrame(game2Loop);
+        }
     }
-    
-    // Tělo (Polární barvy - černobílá)
-    game2Ctx.fillStyle = "#1e293b";
-    game2Ctx.beginPath();
-    game2Ctx.arc(pScreenX + 12, pScreenY - 20, 14, 0, Math.PI * 2);
-    game2Ctx.fill();
-    
-    // Bříško
-    game2Ctx.fillStyle = "#ffffff";
-    game2Ctx.beginPath();
-    game2Ctx.arc(pScreenX + 12, pScreenY - 16, 9, 0, Math.PI * 2);
-    game2Ctx.fill();
-    
-    // Hlava
-    game2Ctx.fillStyle = "#1e293b";
-    game2Ctx.beginPath();
-    game2Ctx.arc(pScreenX + 12, pScreenY - 38, 8, 0, Math.PI * 2);
-    game2Ctx.fill();
-    
-    // Zobák
-    game2Ctx.fillStyle = "#f59e0b";
-    game2Ctx.beginPath();
-    game2Ctx.moveTo(pScreenX + 16, pScreenY - 39);
-    game2Ctx.lineTo(pScreenX + 25, pScreenY - 37);
-    game2Ctx.lineTo(pScreenX + 16, pScreenY - 35);
-    game2Ctx.fill();
-    
-    game2Ctx.restore();
-
-    requestAnimationFrame(gameLoop); // Hra využívá hlavní překreslovací smyčku
-    if(game2Phase !== 'game-over') {
-        requestAnimationFrame(game2Loop);
-    }
-}
 </script>
 </body>
 </html>
