@@ -17,7 +17,7 @@ const languageWords = {
     'de-DE': ["", "eins", "zwei", "drei", "vier", "fünf", "sechs", "sieben", "acht", "neun", "zehn"],
     'fr-FR': ["", "un", "deux", "trois", "quatre", "cinq", "six", "sept", "huit", "neuf", "dix"],
     'es-ES': ["", "uno", "dos", "tres", "cuatro", "cinco", "seis", "siete", "ocho", "nueve", "diez"],
-    'fi-FI': ["", "yksi", "kaksi", "kolme", "neljä", "viisi", "kuusi", "sieben", "kahdeksan", "yhdeksän", "kymmenen"]
+    'fi-FI': ["", "yksi", "kaksi", "kolme", "neljä", "viisi", "kuusi", "seitsemän", "kahdeksan", "yhdeksän", "kymmenen"] // OPRAVENO: "sieben" změněno na "seitsemän"
 };
 
 // --- HERNÍ STAV ---
@@ -84,6 +84,11 @@ if (SpeechRecognition) {
 // --- INICIALIZACE DROPDOWNŮ A MENU ---
 document.addEventListener('DOMContentLoaded', () => {
     populateLanguageSelects();
+
+    // Přednačtení asynchronních hlasů pro SpeechSynthesis (řeší zpoždění v Chrome)
+    if (window.speechSynthesis && window.speechSynthesis.onvoiceschanged !== undefined) {
+        window.speechSynthesis.onvoiceschanged = window.speechSynthesis.getVoices;
+    }
 
     const startBtn = document.getElementById('game2-start-btn');
     if (startBtn) {
@@ -226,12 +231,23 @@ function speakNumberPromise(num, lang) {
         const utterance = new SpeechSynthesisUtterance(word);
         utterance.lang = lang;
         utterance.rate = 0.85;
+
+        // --- OPRAVA: Výběr autentického nativního hlasu podle jazyka (proti americkému přízvuku) ---
+        const voices = window.speechSynthesis.getVoices();
+        const matchingVoice = voices.find(voice => 
+            voice.lang === lang || voice.lang.startsWith(lang.split('-')[0])
+        );
+        if (matchingVoice) {
+            utterance.voice = matchingVoice;
+        }
+
         utterance.onend = () => resolve();
         utterance.onerror = () => resolve();
         window.speechSynthesis.speak(utterance);
     });
 }
 
+// Zbytek logiky zůstává stejný...
 function updateStatusDisplay(text) {
     const bubbleEl = document.getElementById('game2-bubble-display');
     if (bubbleEl && text.trim()) {
@@ -249,7 +265,6 @@ function evaluateUserAnswer() {
     let sequenceCorrect = true;
 
     for (let num of targetSequence) {
-        // Pokud číslo přesáhne 10 a nemá slovní mapu, použije se stringová reprezentace "15" atd.
         let variants = (languageMaps[langB] && languageMaps[langB][num]) ? languageMaps[langB][num] : [num.toString()];
         let foundIndex = -1;
 
@@ -273,18 +288,16 @@ function evaluateUserAnswer() {
 
     if (sequenceCorrect) {
         score += targetSequence.length;
-        coins += targetSequence.length; // Získání bodů/měny na nákupy
+        coins += targetSequence.length;
         if (bubbleEl) bubbleEl.textContent = "✨ SPRÁVNĚ! Skáčeš na další kru! ✨";
         
-        // Spuštění fáze skoku na další kru
         gameState = 'jumping';
         jumpAnimationProgress = 0;
 
         setTimeout(() => {
-            visualCracks = 0; // Nová kra je netknutá, praskliny mizí
+            visualCracks = 0;
             roundNumber++;
             
-            // Každá 3 dokončená kola se otevře polární obchod
             if ((roundNumber - 1) % 3 === 0) {
                 gameState = 'shop';
             } else {
@@ -314,7 +327,6 @@ function handleGameEnd() {
     if (recognition) { try { recognition.stop(); } catch(e){} }
     if (window.speechSynthesis) window.speechSynthesis.cancel();
 
-    // Detekce přihlášeného jména (podle tvého systému), jinak prompt fallback
     let playerName = "Anonymní tučňák";
     if (window.currentUser && window.currentUser.name) {
         playerName = window.currentUser.name;
@@ -325,7 +337,6 @@ function handleGameEnd() {
         }
     }
 
-    // Uložení highscores do localStorage
     let highscores = JSON.parse(localStorage.getItem('game2_highscores') || '[]');
     highscores.push({ name: playerName, score: score, round: roundNumber, date: new Date().toLocaleDateString() });
     highscores.sort((a, b) => b.score - a.score);
@@ -343,14 +354,12 @@ function handleCanvasClick(e) {
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    // Interakce v obchodě
     if (gameState === 'shop') {
         let cardW = 140;
         let cardH = 110;
         let cardY = canvas.height / 2 - 30;
         let spacing = (canvas.width - (3 * cardW)) / 4;
 
-        // Karty položek: 1. Šála, 2. Rukavice, 3. Čepice
         if (y >= cardY && y <= cardY + cardH) {
             if (x >= spacing && x <= spacing + cardW && !upgrades.scarf && coins >= 5) {
                 coins -= 5; upgrades.scarf = true;
@@ -361,7 +370,6 @@ function handleCanvasClick(e) {
             }
         }
 
-        // Tlačítko pokračovat
         let btnW = 220; let btnH = 40;
         let btnX = canvas.width / 2 - btnW / 2;
         let btnY = canvas.height - 55;
@@ -371,7 +379,6 @@ function handleCanvasClick(e) {
         }
     }
 
-    // Odchod ze síně slávy zpět do hlavního menu
     if (gameState === 'highscore') {
         let btnW = 220; let btnH = 40;
         let btnX = canvas.width / 2 - btnW / 2;
@@ -395,11 +402,11 @@ function delay(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-// --- CANVAS RENDERING (GRAFIKA KRY A PRASKLIN) ---
+// --- CANVAS RENDERING ---
 function gameRenderLoop() {
     if (!ctx || !canvas || !gameActive) return;
 
-    // --- ZOBRAZENÍ SÍNĚ SLÁVY (HIGHSCORE LIST) ---
+    // --- SÍŇ SLÁVY ---
     if (gameState === 'highscore') {
         ctx.fillStyle = "#111827";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -427,7 +434,6 @@ function gameRenderLoop() {
             ctx.fillText(`${entry.score} b. (Kolo ${entry.round})`, canvas.width / 2 + 160, yPos);
         });
 
-        // Tlačítko Zpět do menu
         let btnW = 220; let btnH = 40;
         let btnX = canvas.width / 2 - btnW / 2;
         let btnY = canvas.height - 50;
@@ -440,7 +446,7 @@ function gameRenderLoop() {
         return;
     }
 
-    // --- ZOBRAZENÍ SEZÓNNÍHO OBCHODU ---
+    // --- SEZÓNNÍ OBCHOD ---
     if (gameState === 'shop') {
         ctx.fillStyle = "#1a202c";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -499,7 +505,7 @@ function gameRenderLoop() {
         return;
     }
 
-    // --- STANDARDNÍ VYKRESLENÍ HERNIHO POLE ---
+    // --- STANDARDNÍ VYKRESLENÍ HERNÍHO POLE ---
     ctx.fillStyle = "#1a365d";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -509,22 +515,19 @@ function gameRenderLoop() {
     let centerX = canvas.width / 2;
     let centerY = canvas.height / 2 + 20;
 
-    // Výpočet horizontální pozice kry pro animaci skoku na novou kru
     let floeX = centerX;
     let jumpOffsetY = 0;
     if (gameState === 'jumping') {
         jumpAnimationProgress += 0.04;
         if (jumpAnimationProgress > 1) jumpAnimationProgress = 1;
-        // Parabolický oblouk výšky skoku panáčka
         jumpOffsetY = -Math.sin(jumpAnimationProgress * Math.PI) * 45;
     }
 
-    // Vykreslení ledové kry (Polygon)
+    // Ledová kra
     ctx.save();
     ctx.fillStyle = "#e2e8f0";
     ctx.strokeStyle = "#90cdf4";
     ctx.lineWidth = 4;
-    
     ctx.beginPath();
     ctx.moveTo(floeX - 110, centerY - 40);
     ctx.lineTo(floeX + 100, centerY - 45);
@@ -535,7 +538,7 @@ function gameRenderLoop() {
     ctx.stroke();
     ctx.restore();
 
-    // Vykreslení prasklin podle poškození aktuální kry
+    // Praskliny
     if (visualCracks >= 1) {
         ctx.strokeStyle = "#2d3748";
         ctx.lineWidth = 3;
@@ -551,7 +554,6 @@ function gameRenderLoop() {
         ctx.lineTo(centerX + 30, centerY - 5);
         ctx.lineTo(centerX + 50, centerY + 40);
         ctx.stroke();
-        
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(centerX - 20, centerY + 10);
@@ -559,7 +561,7 @@ function gameRenderLoop() {
         ctx.stroke();
     }
 
-    // Vykreslení panáčka
+    // Panáček
     let playerY = centerY - 25;
     if (gameState === 'game_over' || lives <= 0) {
         playerY = centerY + 65;
@@ -567,7 +569,6 @@ function gameRenderLoop() {
         ctx.beginPath();
         ctx.arc(centerX, playerY, 25, 0, Math.PI, true);
         ctx.fill();
-        
         ctx.fillStyle = "#ffffff";
         ctx.font = "bold 14px sans-serif";
         ctx.textAlign = "center";
@@ -577,7 +578,6 @@ function gameRenderLoop() {
         let pX = centerX;
         let pY = playerY + bobbing;
 
-        // Stín pod hráčem
         if (gameState !== 'jumping') {
             ctx.fillStyle = "rgba(0,0,0,0.15)";
             ctx.beginPath();
@@ -585,37 +585,31 @@ function gameRenderLoop() {
             ctx.fill();
         }
 
-        // Tělo / Zimní bunda
         ctx.fillStyle = "#e53e3e"; 
         ctx.beginPath();
         ctx.roundRect ? ctx.roundRect(pX - 12, pY - 5, 24, 26, 6) : ctx.fillRect(pX - 12, pY - 5, 24, 26);
         ctx.fill();
 
-        // --- VYKRRESLENÍ VYLEPŠENÍ (RUKAVICE) ---
         if (upgrades.gloves) {
-            ctx.fillStyle = "#2d3748"; // Tmavé rukavice
+            ctx.fillStyle = "#2d3748";
             ctx.beginPath();
             ctx.arc(pX - 15, pY + 10, 4, 0, Math.PI * 2);
             ctx.arc(pX + 15, pY + 10, 4, 0, Math.PI * 2);
             ctx.fill();
         }
 
-        // --- VYKRESLENÍ VYLEPŠENÍ (ŠÁLA) ---
         if (upgrades.scarf) {
-            ctx.fillStyle = "#31bafc"; // Jasně modrá šála
+            ctx.fillStyle = "#31bafc";
             ctx.fillRect(pX - 11, pY - 2, 22, 5);
             ctx.fillStyle = "#1d8cf8";
             ctx.fillRect(pX + 4, pY + 3, 5, 11); 
         }
 
-        // Hlava a Čepice (Výchozí vs Prémiová)
         if (upgrades.hat) {
-            // Zlatá královská polární koruna/čepice
             ctx.fillStyle = "#ffeb3b";
             ctx.beginPath();
             ctx.arc(pX, pY - 12, 8, 0, Math.PI * 2);
             ctx.fill();
-
             ctx.fillStyle = "#9b59b6"; 
             ctx.beginPath();
             ctx.moveTo(pX - 9, pY - 14);
@@ -626,20 +620,18 @@ function gameRenderLoop() {
             ctx.closePath();
             ctx.fill();
         } else {
-            // Klasická žlutá čepice
             ctx.fillStyle = "#ffeb3b";
             ctx.beginPath();
             ctx.arc(pX, pY - 12, 8, 0, Math.PI * 2);
             ctx.fill();
         }
 
-        // Oči
         ctx.fillStyle = "#000000";
         ctx.fillRect(pX - 4, pY - 15, 2, 3);
         ctx.fillRect(pX + 2, pY - 15, 2, 3);
     }
 
-    // Vykreslení textového HUDu
+    // HUD Text
     ctx.fillStyle = "#ffffff";
     ctx.font = "bold 13px sans-serif";
     ctx.textAlign = "left";
@@ -648,12 +640,21 @@ function gameRenderLoop() {
     ctx.fillStyle = "#f1c40f";
     ctx.fillText(`Mince: 🪙 ${coins}`, 110, 45);
 
+    // --- NOVINKA: Značení směru jazyků uprostřed horní lišty ---
+    ctx.fillStyle = "#cbd5e1";
+    ctx.font = "bold 12px sans-serif";
+    ctx.textAlign = "center";
+    const flagMap = { 'cs-CZ': '🇨🇿 CZ', 'en-US': '🇺🇸 EN', 'de-DE': '🇩🇪 DE', 'fr-FR': '🇫🇷 FR', 'es-ES': '🇪🇸 ES', 'fi-FI': '🇫🇮 FI' };
+    const strA = flagMap[langA] || langA;
+    const strB = flagMap[langB] || langB;
+    ctx.fillText(`🎧 ${strA}  ➔  🗣️ ${strB}`, canvas.width / 2, 35);
+    // -----------------------------------------------------------
+
     ctx.fillStyle = "#ffffff";
     ctx.textAlign = "right";
     let hearts = lives > 0 ? "❤️".repeat(lives) + "🖤".repeat(3 - lives) : "💀 UTOPEN";
     ctx.fillText(`Stabilita kry: ${hearts}`, canvas.width - 15, 25);
 
-    // Výpočet číselného rozsahu pro zobrazení obtížnosti v horní liště
     let currentLimit = roundNumber > 9 ? 100 : roundNumber > 6 ? 50 : roundNumber > 3 ? 20 : 10;
     ctx.fillText(`Rozsah čísel: 1 - ${currentLimit}`, canvas.width - 15, 45);
 
