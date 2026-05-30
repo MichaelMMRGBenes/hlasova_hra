@@ -17,7 +17,7 @@ const languageWords = {
     'de-DE': ["", "eins", "zwei", "drei", "vier", "fünf", "sechs", "sieben", "acht", "neun", "zehn"],
     'fr-FR': ["", "un", "deux", "trois", "quatre", "cinq", "six", "sept", "huit", "neuf", "dix"],
     'es-ES': ["", "uno", "dos", "tres", "cuatro", "cinco", "seis", "siete", "ocho", "nueve", "diez"],
-    'fi-FI': ["", "yksi", "kaksi", "kolme", "neljä", "viisi", "kuusi", "seitsemän", "kahdeksan", "yhdeksän", "kymmenen"] // OPRAVENO: "sieben" změněno na "seitsemän"
+    'fi-FI': ["", "yksi", "kaksi", "kolme", "neljä", "viisi", "kuusi", "seitsemän", "kahdeksan", "yhdeksän", "kymmenen"]
 };
 
 // --- HERNÍ STAV ---
@@ -30,10 +30,10 @@ let langB = 'fi-FI';
 let targetSequence = [];
 let accumulatedTranscript = "";
 let lives = 3;
+let maxLives = 3; // NOVÉ: Sledování maximálního počtu životů
 let score = 0;
 let roundNumber = 1;
 
-// --- NOVÉ PRVKY STAVU ---
 let visualCracks = 0; 
 let coins = 0;
 let upgrades = { scarf: false, gloves: false, hat: false };
@@ -85,7 +85,6 @@ if (SpeechRecognition) {
 document.addEventListener('DOMContentLoaded', () => {
     populateLanguageSelects();
 
-    // Přednačtení asynchronních hlasů pro SpeechSynthesis (řeší zpoždění v Chrome)
     if (window.speechSynthesis && window.speechSynthesis.onvoiceschanged !== undefined) {
         window.speechSynthesis.onvoiceschanged = window.speechSynthesis.getVoices;
     }
@@ -145,6 +144,7 @@ async function startGame2() {
     langA = document.getElementById('game2-lang-a').value;
     langB = document.getElementById('game2-lang-b').value;
 
+    maxLives = 3; // Reset maximálních životů
     lives = 3;
     score = 0;
     roundNumber = 1;
@@ -162,7 +162,6 @@ async function startGame2() {
 
     requestAnimationFrame(gameRenderLoop);
 
-    // První zvuk celé hry začne s mírným zpožděním (2.5 sekundy)
     setTimeout(() => {
         if (gameActive) startNewRound();
     }, 2500);
@@ -176,7 +175,6 @@ function startNewRound() {
     if (difficulty === 'easy') seqLength = 3;
     if (difficulty === 'hard') seqLength = 5;
 
-    // Dynamické ztěžování číselného rozsahu podle dosaženého kola
     let maxNumber = 10;
     if (roundNumber > 9) maxNumber = 100;
     else if (roundNumber > 6) maxNumber = 50;
@@ -232,7 +230,6 @@ function speakNumberPromise(num, lang) {
         utterance.lang = lang;
         utterance.rate = 0.85;
 
-        // --- OPRAVA: Výběr autentického nativního hlasu podle jazyka (proti americkému přízvuku) ---
         const voices = window.speechSynthesis.getVoices();
         const matchingVoice = voices.find(voice => 
             voice.lang === lang || voice.lang.startsWith(lang.split('-')[0])
@@ -247,7 +244,6 @@ function speakNumberPromise(num, lang) {
     });
 }
 
-// Zbytek logiky zůstává stejný...
 function updateStatusDisplay(text) {
     const bubbleEl = document.getElementById('game2-bubble-display');
     if (bubbleEl && text.trim()) {
@@ -285,10 +281,15 @@ function evaluateUserAnswer() {
     }
 
     const bubbleEl = document.getElementById('game2-bubble-display');
+    const statusEl = document.getElementById('game2-status');
 
     if (sequenceCorrect) {
         score += targetSequence.length;
         coins += targetSequence.length;
+        
+        // OPRAVA: Doplnění jednoho života při úspěšném skoku (nepřekročí max)
+        if (lives < maxLives) lives++;
+
         if (bubbleEl) bubbleEl.textContent = "✨ SPRÁVNĚ! Skáčeš na další kru! ✨";
         
         gameState = 'jumping';
@@ -300,6 +301,9 @@ function evaluateUserAnswer() {
             
             if ((roundNumber - 1) % 3 === 0) {
                 gameState = 'shop';
+                // Vyčištění HTML popisků pro čisté zobrazení obchodu
+                if (statusEl) statusEl.textContent = "🛒 Vítej v polárním obchodě! Nakup si vylepšení.";
+                if (bubbleEl) bubbleEl.textContent = "Klikni přímo na předmět na obrazovce plátna.";
             } else {
                 if (gameActive) startNewRound();
             }
@@ -351,8 +355,10 @@ function handleGameEnd() {
 function handleCanvasClick(e) {
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    
+    // --- OPRAVA: Proporcionální přepočet souřadnic podle skutečného měřítka plátna ---
+    const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+    const y = (e.clientY - rect.top) * (canvas.height / rect.height);
 
     if (gameState === 'shop') {
         let cardW = 140;
@@ -360,13 +366,14 @@ function handleCanvasClick(e) {
         let cardY = canvas.height / 2 - 30;
         let spacing = (canvas.width - (3 * cardW)) / 4;
 
+        // Kliknutí na předměty v obchodě + OPRAVA: Navýšení max. životů o 1
         if (y >= cardY && y <= cardY + cardH) {
             if (x >= spacing && x <= spacing + cardW && !upgrades.scarf && coins >= 5) {
-                coins -= 5; upgrades.scarf = true;
+                coins -= 5; upgrades.scarf = true; maxLives++; lives++;
             } else if (x >= spacing * 2 + cardW && x <= spacing * 2 + cardW * 2 && !upgrades.gloves && coins >= 5) {
-                coins -= 5; upgrades.gloves = true;
+                coins -= 5; upgrades.gloves = true; maxLives++; lives++;
             } else if (x >= spacing * 3 + cardW * 2 && x <= spacing * 3 + cardW * 3 && !upgrades.hat && coins >= 10) {
-                coins -= 10; upgrades.hat = true;
+                coins -= 10; upgrades.hat = true; maxLives++; lives++;
             }
         }
 
@@ -400,6 +407,113 @@ function terminateGame() {
 
 function delay(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// --- POMOCNÁ FUNKCE PRO VYKRESLENÍ KRY V DANÉM MĚŘÍTKU ---
+function drawIceFloe(x, y, scale, cracks) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(scale, scale);
+    
+    ctx.fillStyle = "#e2e8f0";
+    ctx.strokeStyle = "#90cdf4";
+    ctx.lineWidth = 4 / scale;
+    
+    ctx.beginPath();
+    ctx.moveTo(-110, -40);
+    ctx.lineTo(100, -45);
+    ctx.lineTo(140, 40);
+    ctx.lineTo(-130, 50);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    if (cracks >= 1) {
+        ctx.strokeStyle = "#2d3748";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(-60, -30);
+        ctx.lineTo(-20, 10);
+        ctx.lineTo(-40, 45);
+        ctx.stroke();
+    }
+    if (cracks >= 2) {
+        ctx.strokeStyle = "#2d3748";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(80, -35);
+        ctx.lineTo(30, -5);
+        ctx.lineTo(50, 40);
+        ctx.stroke();
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(-20, 10);
+        ctx.lineTo(30, -5);
+        ctx.stroke();
+    }
+    ctx.restore();
+}
+
+// --- POMOCNÁ FUNKCE PRO VYKRESLENÍ PANÁČKA ---
+function drawPlayer(pX, pY) {
+    if (gameState === 'game_over' || lives <= 0) {
+        let splouchY = canvas.height / 2 + 105;
+        ctx.fillStyle = "#3182ce";
+        ctx.beginPath();
+        ctx.arc(canvas.width / 2, splouchY, 25, 0, Math.PI, true);
+        ctx.fill();
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 14px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("SPLOUCH!", canvas.width / 2, splouchY - 10);
+        return;
+    }
+
+    ctx.fillStyle = "#e53e3e"; 
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(pX - 12, pY - 5, 24, 26, 6);
+    else ctx.fillRect(pX - 12, pY - 5, 24, 26);
+    ctx.fill();
+
+    if (upgrades.gloves) {
+        ctx.fillStyle = "#2d3748";
+        ctx.beginPath();
+        ctx.arc(pX - 15, pY + 10, 4, 0, Math.PI * 2);
+        ctx.arc(pX + 15, pY + 10, 4, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    if (upgrades.scarf) {
+        ctx.fillStyle = "#31bafc";
+        ctx.fillRect(pX - 11, pY - 2, 22, 5);
+        ctx.fillStyle = "#1d8cf8";
+        ctx.fillRect(pX + 4, pY + 3, 5, 11); 
+    }
+
+    if (upgrades.hat) {
+        ctx.fillStyle = "#ffeb3b";
+        ctx.beginPath();
+        ctx.arc(pX, pY - 12, 8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#9b59b6"; 
+        ctx.beginPath();
+        ctx.moveTo(pX - 9, pY - 14);
+        ctx.lineTo(pX - 5, pY - 22);
+        ctx.lineTo(pX, pY - 16);
+        ctx.lineTo(pX + 5, pY - 22);
+        ctx.lineTo(pX + 9, pY - 14);
+        ctx.closePath();
+        ctx.fill();
+    } else {
+        ctx.fillStyle = "#ffeb3b";
+        ctx.beginPath();
+        ctx.arc(pX, pY - 12, 8, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    ctx.fillStyle = "#000000";
+    ctx.fillRect(pX - 4, pY - 15, 2, 3);
+    ctx.fillRect(pX + 2, pY - 15, 2, 3);
 }
 
 // --- CANVAS RENDERING ---
@@ -465,9 +579,9 @@ function gameRenderLoop() {
         let spacing = (canvas.width - (3 * cardW)) / 4;
 
         const items = [
-            { id: 'scarf', name: 'Hřejivá šála', cost: 5, icon: '🧣' },
-            { id: 'gloves', name: 'Rukavice', cost: 5, icon: '🧤' },
-            { id: 'hat', name: 'Polární čepice', cost: 10, icon: '👑' }
+            { id: 'scarf', name: 'Hřejivá šála (+1 max ❤️)', cost: 5, icon: '🧣' },
+            { id: 'gloves', name: 'Rukavice (+1 max ❤️)', cost: 5, icon: '🧤' },
+            { id: 'hat', name: 'Polární čepice (+1 max ❤️)', cost: 10, icon: '👑' }
         ];
 
         items.forEach((item, idx) => {
@@ -479,7 +593,7 @@ function gameRenderLoop() {
             ctx.strokeRect(itemX, cardY, cardW, cardH);
 
             ctx.fillStyle = "#ffffff";
-            ctx.font = "bold 13px sans-serif";
+            ctx.font = "bold 12px sans-serif";
             ctx.fillText(item.name, itemX + cardW / 2, cardY + 22);
             ctx.font = "26px sans-serif";
             ctx.fillText(item.icon, itemX + cardW / 2, cardY + 60);
@@ -505,7 +619,7 @@ function gameRenderLoop() {
         return;
     }
 
-    // --- STANDARDNÍ VYKRESLENÍ HERNÍHO POLE ---
+    // --- STANDARDNÍ VYKRESLENÍ HERNÍHO POLE A DOBÍHÁNÍ KER ---
     ctx.fillStyle = "#1a365d";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -513,125 +627,55 @@ function gameRenderLoop() {
     ctx.fillRect(0, 0, canvas.width, 60);
 
     let centerX = canvas.width / 2;
-    let centerY = canvas.height / 2 + 20;
+    let baseY = canvas.height / 2 + 40;
 
-    let floeX = centerX;
-    let jumpOffsetY = 0;
+    // --- OPRAVA: Plynulá animace skoku a posunu řetězce ker v dálce ---
     if (gameState === 'jumping') {
-        jumpAnimationProgress += 0.04;
+        jumpAnimationProgress += 0.035; 
         if (jumpAnimationProgress > 1) jumpAnimationProgress = 1;
-        jumpOffsetY = -Math.sin(jumpAnimationProgress * Math.PI) * 45;
-    }
+        
+        let progress = jumpAnimationProgress;
+        let scrollY = progress * 140; // Rychlost posunu světa pod hráčem
 
-    // Ledová kra
-    ctx.save();
-    ctx.fillStyle = "#e2e8f0";
-    ctx.strokeStyle = "#90cdf4";
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.moveTo(floeX - 110, centerY - 40);
-    ctx.lineTo(floeX + 100, centerY - 45);
-    ctx.lineTo(floeX + 140, centerY + 40);
-    ctx.lineTo(floeX - 130, centerY + 50);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-    ctx.restore();
+        // 1. Stará (současná) kra odjíždí dolů z obrazovky
+        drawIceFloe(centerX, baseY + scrollY, 1.0 - progress * 0.2, visualCracks);
+        
+        // 2. Budoucí kra (v dálce) se přibližuje a zvětšuje do popředí
+        drawIceFloe(centerX, (baseY - 140) + scrollY, 0.7 + progress * 0.3, 0);
 
-    // Praskliny
-    if (visualCracks >= 1) {
-        ctx.strokeStyle = "#2d3748";
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.moveTo(centerX - 60, centerY - 30);
-        ctx.lineTo(centerX - 20, centerY + 10);
-        ctx.lineTo(centerX - 40, centerY + 45);
-        ctx.stroke();
-    }
-    if (visualCracks >= 2) {
-        ctx.beginPath();
-        ctx.moveTo(centerX + 80, centerY - 35);
-        ctx.lineTo(centerX + 30, centerY - 5);
-        ctx.lineTo(centerX + 50, centerY + 40);
-        ctx.stroke();
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(centerX - 20, centerY + 10);
-        ctx.lineTo(centerX + 30, centerY - 5);
-        ctx.stroke();
-    }
+        // 3. Vzdálená budoucí kra se posouvá na střední pozici
+        drawIceFloe(centerX, (baseY - 260) + scrollY, 0.5 + progress * 0.2, 0);
 
-    // Panáček
-    let playerY = centerY - 25;
-    if (gameState === 'game_over' || lives <= 0) {
-        playerY = centerY + 65;
-        ctx.fillStyle = "#3182ce";
-        ctx.beginPath();
-        ctx.arc(centerX, playerY, 25, 0, Math.PI, true);
-        ctx.fill();
-        ctx.fillStyle = "#ffffff";
-        ctx.font = "bold 14px sans-serif";
-        ctx.textAlign = "center";
-        ctx.fillText("SPLOUCH!", centerX, playerY - 10);
-    } else {
-        let bobbing = gameState === 'jumping' ? jumpOffsetY : Math.sin(Date.now() * 0.004) * 3;
+        // Parabolycká křivka výšky skoku panáčka ve vzduchu
+        let jumpArcY = -Math.sin(progress * Math.PI) * 55;
         let pX = centerX;
-        let pY = playerY + bobbing;
+        let pY = (baseY - 25) + jumpArcY;
+        
+        drawPlayer(pX, pY);
+    } else {
+        // Statický stav (příprava, poslech) - vykreslení ker v perspektivním řetězci za sebou
+        // Nejvzdálenější kra
+        drawIceFloe(centerX, baseY - 260, 0.5, 0);
+        // Nadcházející kra (v dálce)
+        drawIceFloe(centerX, baseY - 140, 0.7, 0);
+        // Hlavní aktivní kra (na které stojíme)
+        drawIceFloe(centerX, baseY, 1.0, visualCracks);
 
-        if (gameState !== 'jumping') {
-            ctx.fillStyle = "rgba(0,0,0,0.15)";
-            ctx.beginPath();
-            ctx.ellipse(pX, pY + 25, 15, 5, 0, 0, Math.PI * 2);
-            ctx.fill();
-        }
+        // Jemné pohupování panáčka na hladině kry
+        let bobbing = Math.sin(Date.now() * 0.004) * 3;
+        let pX = centerX;
+        let pY = (baseY - 25) + bobbing;
 
-        ctx.fillStyle = "#e53e3e"; 
+        // Stín pod panáčkem
+        ctx.fillStyle = "rgba(0,0,0,0.15)";
         ctx.beginPath();
-        ctx.roundRect ? ctx.roundRect(pX - 12, pY - 5, 24, 26, 6) : ctx.fillRect(pX - 12, pY - 5, 24, 26);
+        ctx.ellipse(pX, pY + 25, 15, 5, 0, 0, Math.PI * 2);
         ctx.fill();
 
-        if (upgrades.gloves) {
-            ctx.fillStyle = "#2d3748";
-            ctx.beginPath();
-            ctx.arc(pX - 15, pY + 10, 4, 0, Math.PI * 2);
-            ctx.arc(pX + 15, pY + 10, 4, 0, Math.PI * 2);
-            ctx.fill();
-        }
-
-        if (upgrades.scarf) {
-            ctx.fillStyle = "#31bafc";
-            ctx.fillRect(pX - 11, pY - 2, 22, 5);
-            ctx.fillStyle = "#1d8cf8";
-            ctx.fillRect(pX + 4, pY + 3, 5, 11); 
-        }
-
-        if (upgrades.hat) {
-            ctx.fillStyle = "#ffeb3b";
-            ctx.beginPath();
-            ctx.arc(pX, pY - 12, 8, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.fillStyle = "#9b59b6"; 
-            ctx.beginPath();
-            ctx.moveTo(pX - 9, pY - 14);
-            ctx.lineTo(pX - 5, pY - 22);
-            ctx.lineTo(pX, pY - 16);
-            ctx.lineTo(pX + 5, pY - 22);
-            ctx.lineTo(pX + 9, pY - 14);
-            ctx.closePath();
-            ctx.fill();
-        } else {
-            ctx.fillStyle = "#ffeb3b";
-            ctx.beginPath();
-            ctx.arc(pX, pY - 12, 8, 0, Math.PI * 2);
-            ctx.fill();
-        }
-
-        ctx.fillStyle = "#000000";
-        ctx.fillRect(pX - 4, pY - 15, 2, 3);
-        ctx.fillRect(pX + 2, pY - 15, 2, 3);
+        drawPlayer(pX, pY);
     }
 
-    // HUD Text
+    // --- HUD TEXTY ---
     ctx.fillStyle = "#ffffff";
     ctx.font = "bold 13px sans-serif";
     ctx.textAlign = "left";
@@ -640,7 +684,7 @@ function gameRenderLoop() {
     ctx.fillStyle = "#f1c40f";
     ctx.fillText(`Mince: 🪙 ${coins}`, 110, 45);
 
-    // --- NOVINKA: Značení směru jazyků uprostřed horní lišty ---
+    // Značení směru jazyků uprostřed horní lišty
     ctx.fillStyle = "#cbd5e1";
     ctx.font = "bold 12px sans-serif";
     ctx.textAlign = "center";
@@ -648,11 +692,11 @@ function gameRenderLoop() {
     const strA = flagMap[langA] || langA;
     const strB = flagMap[langB] || langB;
     ctx.fillText(`🎧 ${strA}  ➔  🗣️ ${strB}`, canvas.width / 2, 35);
-    // -----------------------------------------------------------
 
     ctx.fillStyle = "#ffffff";
     ctx.textAlign = "right";
-    let hearts = lives > 0 ? "❤️".repeat(lives) + "🖤".repeat(3 - lives) : "💀 UTOPEN";
+    // Dynamické vykreslení životů podle aktuálního maxLives limitu
+    let hearts = lives > 0 ? "❤️".repeat(lives) + "🖤".repeat(maxLives - lives) : "💀 UTOPEN";
     ctx.fillText(`Stabilita kry: ${hearts}`, canvas.width - 15, 25);
 
     let currentLimit = roundNumber > 9 ? 100 : roundNumber > 6 ? 50 : roundNumber > 3 ? 20 : 10;
