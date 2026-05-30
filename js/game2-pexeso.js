@@ -30,7 +30,7 @@ let langB = 'fi-FI';
 let targetSequence = [];
 let accumulatedTranscript = "";
 let lives = 3;
-let maxLives = 3; // NOVÉ: Sledování maximálního počtu životů
+let maxLives = 3; 
 let score = 0;
 let roundNumber = 1;
 
@@ -140,11 +140,19 @@ async function startGame2() {
         return;
     }
 
+    // --- OPRAVA: Okamžité probuzení (Warm-up) řečového modulu při interakci ---
+    if (window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+        const wakeupUtterance = new SpeechSynthesisUtterance(" ");
+        wakeupUtterance.volume = 0; // Úplně potichu, abychom nerušili úvod hry
+        window.speechSynthesis.speak(wakeupUtterance);
+    }
+
     difficulty = document.getElementById('game2-difficulty').value || 'medium';
     langA = document.getElementById('game2-lang-a').value;
     langB = document.getElementById('game2-lang-b').value;
 
-    maxLives = 3; // Reset maximálních životů
+    maxLives = 3; 
     lives = 3;
     score = 0;
     roundNumber = 1;
@@ -287,7 +295,6 @@ function evaluateUserAnswer() {
         score += targetSequence.length;
         coins += targetSequence.length;
         
-        // OPRAVA: Doplnění jednoho života při úspěšném skoku (nepřekročí max)
         if (lives < maxLives) lives++;
 
         if (bubbleEl) bubbleEl.textContent = "✨ SPRÁVNĚ! Skáčeš na další kru! ✨";
@@ -301,7 +308,6 @@ function evaluateUserAnswer() {
             
             if ((roundNumber - 1) % 3 === 0) {
                 gameState = 'shop';
-                // Vyčištění HTML popisků pro čisté zobrazení obchodu
                 if (statusEl) statusEl.textContent = "🛒 Vítej v polárním obchodě! Nakup si vylepšení.";
                 if (bubbleEl) bubbleEl.textContent = "Klikni přímo na předmět na obrazovce plátna.";
             } else {
@@ -356,7 +362,6 @@ function handleCanvasClick(e) {
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
     
-    // --- OPRAVA: Proporcionální přepočet souřadnic podle skutečného měřítka plátna ---
     const x = (e.clientX - rect.left) * (canvas.width / rect.width);
     const y = (e.clientY - rect.top) * (canvas.height / rect.height);
 
@@ -366,7 +371,6 @@ function handleCanvasClick(e) {
         let cardY = canvas.height / 2 - 30;
         let spacing = (canvas.width - (3 * cardW)) / 4;
 
-        // Kliknutí na předměty v obchodě + OPRAVA: Navýšení max. životů o 1
         if (y >= cardY && y <= cardY + cardH) {
             if (x >= spacing && x <= spacing + cardW && !upgrades.scarf && coins >= 5) {
                 coins -= 5; upgrades.scarf = true; maxLives++; lives++;
@@ -520,7 +524,6 @@ function drawPlayer(pX, pY) {
 function gameRenderLoop() {
     if (!ctx || !canvas || !gameActive) return;
 
-    // --- SÍŇ SLÁVY ---
     if (gameState === 'highscore') {
         ctx.fillStyle = "#111827";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -560,7 +563,6 @@ function gameRenderLoop() {
         return;
     }
 
-    // --- SEZÓNNÍ OBCHOD ---
     if (gameState === 'shop') {
         ctx.fillStyle = "#1a202c";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -619,7 +621,6 @@ function gameRenderLoop() {
         return;
     }
 
-    // --- STANDARDNÍ VYKRESLENÍ HERNÍHO POLE A DOBÍHÁNÍ KER ---
     ctx.fillStyle = "#1a365d";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -629,44 +630,31 @@ function gameRenderLoop() {
     let centerX = canvas.width / 2;
     let baseY = canvas.height / 2 + 40;
 
-    // --- OPRAVA: Plynulá animace skoku a posunu řetězce ker v dálce ---
     if (gameState === 'jumping') {
         jumpAnimationProgress += 0.035; 
         if (jumpAnimationProgress > 1) jumpAnimationProgress = 1;
         
         let progress = jumpAnimationProgress;
-        let scrollY = progress * 140; // Rychlost posunu světa pod hráčem
+        let scrollY = progress * 140; 
 
-        // 1. Stará (současná) kra odjíždí dolů z obrazovky
         drawIceFloe(centerX, baseY + scrollY, 1.0 - progress * 0.2, visualCracks);
-        
-        // 2. Budoucí kra (v dálce) se přibližuje a zvětšuje do popředí
         drawIceFloe(centerX, (baseY - 140) + scrollY, 0.7 + progress * 0.3, 0);
-
-        // 3. Vzdálená budoucí kra se posouvá na střední pozici
         drawIceFloe(centerX, (baseY - 260) + scrollY, 0.5 + progress * 0.2, 0);
 
-        // Parabolycká křivka výšky skoku panáčka ve vzduchu
         let jumpArcY = -Math.sin(progress * Math.PI) * 55;
         let pX = centerX;
         let pY = (baseY - 25) + jumpArcY;
         
         drawPlayer(pX, pY);
     } else {
-        // Statický stav (příprava, poslech) - vykreslení ker v perspektivním řetězci za sebou
-        // Nejvzdálenější kra
         drawIceFloe(centerX, baseY - 260, 0.5, 0);
-        // Nadcházející kra (v dálce)
         drawIceFloe(centerX, baseY - 140, 0.7, 0);
-        // Hlavní aktivní kra (na které stojíme)
         drawIceFloe(centerX, baseY, 1.0, visualCracks);
 
-        // Jemné pohupování panáčka na hladině kry
         let bobbing = Math.sin(Date.now() * 0.004) * 3;
         let pX = centerX;
         let pY = (baseY - 25) + bobbing;
 
-        // Stín pod panáčkem
         ctx.fillStyle = "rgba(0,0,0,0.15)";
         ctx.beginPath();
         ctx.ellipse(pX, pY + 25, 15, 5, 0, 0, Math.PI * 2);
@@ -675,7 +663,6 @@ function gameRenderLoop() {
         drawPlayer(pX, pY);
     }
 
-    // --- HUD TEXTY ---
     ctx.fillStyle = "#ffffff";
     ctx.font = "bold 13px sans-serif";
     ctx.textAlign = "left";
@@ -684,7 +671,6 @@ function gameRenderLoop() {
     ctx.fillStyle = "#f1c40f";
     ctx.fillText(`Mince: 🪙 ${coins}`, 110, 45);
 
-    // Značení směru jazyků uprostřed horní lišty
     ctx.fillStyle = "#cbd5e1";
     ctx.font = "bold 12px sans-serif";
     ctx.textAlign = "center";
@@ -695,7 +681,6 @@ function gameRenderLoop() {
 
     ctx.fillStyle = "#ffffff";
     ctx.textAlign = "right";
-    // Dynamické vykreslení životů podle aktuálního maxLives limitu
     let hearts = lives > 0 ? "❤️".repeat(lives) + "🖤".repeat(maxLives - lives) : "💀 UTOPEN";
     ctx.fillText(`Stabilita kry: ${hearts}`, canvas.width - 15, 25);
 
