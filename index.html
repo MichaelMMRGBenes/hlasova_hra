@@ -1200,6 +1200,289 @@ function selectGame(gameId) {
     // Inicializace výchozího jazyka na češtinu a vykreslení základního Canvasu
     setUILanguage('cs');
     draw();
+        // ==========================================
+// LOGIKA DRUHÉ HRY: POLÁRNÍ PEXESO (KRY)
+// ==========================================
+let game2Active = false;
+let game2Canvas = document.getElementById('game2-canvas');
+let game2Ctx = game2Canvas.getContext('2d');
+
+let game2Lang = 'en-US';
+let game2Sequence = [];
+let game2PlayerIndex = 0;
+let game2CurrentLevelSize = 3;
+let game2Lives = 3;
+let game2Score = 0;
+
+// Stav herní fáze: 'computer-speaking' | 'player-repeating' | 'jumping' | 'falling' | 'game-over'
+let game2Phase = 'computer-speaking'; 
+
+let game2PlayerVisual = { x: 200, y: 180, targetX: 200, jumpProgress: 0 };
+let game2CameraX = 0;
+let game2TargetCameraX = 0;
+
+function game2StartGame() {
+    game2Active = true;
+    game2Lives = 3;
+    game2Score = 0;
+    game2CurrentLevelSize = parseInt(document.getElementById('game2-difficulty').value);
+    game2Lang = document.getElementById('game2-lang').value;
+    
+    game2PlayerVisual = { x: 200, y: 180, targetX: 200, jumpProgress: 0 };
+    game2CameraX = 0; game2TargetCameraX = 0;
+    
+    changeScreen('screen-game2-play');
+    
+    if (recognition) {
+        try { recognition.stop(); } catch(e){}
+        recognition.lang = game2Lang;
+        // Přepsání onresult dočasně pro Hru 2
+        recognition.onresult = (e) => {
+            if (!game2Active || game2Phase !== 'player-repeating' || game2Lives <= 0) return;
+            let transcript = '';
+            for (let i = e.resultIndex; i < e.results.length; ++i) {
+                transcript += e.results[i][0].transcript;
+            }
+            game2HandleVoiceInput(transcript);
+        };
+    }
+    
+    game2NextRound();
+    requestAnimationFrame(game2Loop);
+}
+
+function game2NextRound() {
+    game2Phase = 'computer-speaking';
+    document.getElementById('game2-repeat-btn').style.display = 'none';
+    document.getElementById('game2-status').textContent = "🔊 POČÍTAČ MLUVÍ, POSLOUCHEJ...";
+    document.getElementById('game2-status').style.color = "#f1c40f";
+    document.getElementById('game2-number-display').textContent = "???";
+    
+    // Vygenerování nové sekvence čísel (od 1 do 10)
+    game2Sequence = [];
+    for (let i = 0; i < game2CurrentLevelSize; i++) {
+        game2Sequence.push(Math.floor(Math.random() * 10) + 1);
+    }
+    game2PlayerIndex = 0;
+    
+    // Přehrát sekvenci s pauzami
+    setTimeout(() => { game2PlaySequenceStep(0); }, 800);
+}
+
+function game2PlaySequence() {
+    if(game2Phase === 'player-repeating') {
+        game2Phase = 'computer-speaking';
+        document.getElementById('game2-repeat-btn').style.display = 'none';
+        game2PlayerIndex = 0;
+        game2PlaySequenceStep(0);
+    }
+}
+
+function game2PlaySequenceStep(index) {
+    if (!game2Active || game2Lives <= 0) return;
+    
+    if (index >= game2Sequence.length) {
+        // Počítač domluvil, na řadě je hráč
+        game2Phase = 'player-repeating';
+        document.getElementById('game2-status').textContent = "🎤 OPAKUJ CELOU ŘADU ČÍSEL!";
+        document.getElementById('game2-status').style.color = "#2ecc71";
+        document.getElementById('game2-number-display').textContent = "Tvůj tah...";
+        document.getElementById('game2-repeat-btn').style.display = 'inline-block';
+        if(recognition) try { recognition.start(); } catch(e){}
+        return;
+    }
+    
+    let num = game2Sequence[index];
+    document.getElementById('game2-number-display').textContent = `🔊 [Číslo ${index + 1}]`;
+    
+    if (window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+        let word = languageWordsText[game2Lang] ? languageWordsText[game2Lang][num] : num.toString();
+        let utterance = new SpeechSynthesisUtterance(word);
+        utterance.lang = game2Lang;
+        utterance.rate = 0.8;
+        utterance.onend = () => {
+            setTimeout(() => { game2PlaySequenceStep(index + 1); }, 400);
+        };
+        window.speechSynthesis.speak(utterance);
+    } else {
+        // Fallback pokud TTS nefunguje
+        setTimeout(() => { game2PlaySequenceStep(index + 1); }, 1000);
+    }
+}
+
+function game2HandleVoiceInput(rawText) {
+    const text = rawText.toLowerCase().replace(/[.,?!]/g, '').trim();
+    let expectedNum = game2Sequence[game2PlayerIndex];
+    let validAnswers = languageMaps1To10[game2Lang][expectedNum] || [expectedNum.toString()];
+    
+    document.getElementById('game2-number-display').textContent = `Slyším: "${text}"`;
+    
+    if (validAnswers.some(ans => text.includes(ans))) {
+        // Správné číslo!
+        game2PlayerIndex++;
+        if (game2PlayerIndex >= game2Sequence.length) {
+            // Úspěšně zopakoval celé pexeso -> Skok vpřed!
+            game2TriggerJump(true);
+        } else {
+            document.getElementById('game2-status').textContent = `✅ Správně! Zbývá ${game2Sequence.length - game2PlayerIndex} čísel...`;
+        }
+    } else {
+        // Pokud řekl úplně špatné slovo/číslo, které do sekvence nepatří
+        let jakékolivJinéČíslo = false;
+        // Rychlý test, jestli v textu vůbec bylo nějaké (ale chybné) číslo
+        for (let n = 1; n <= 10; n++) {
+            let answers = languageMaps1To10[game2Lang][n] || [n.toString()];
+            if (answers.some(ans => text.includes(ans)) && !validAnswers.some(ans => text.includes(ans))) {
+                jakékolivJinéČíslo = true;
+            }
+        }
+        
+        if(jakékolivJinéČíslo) {
+            game2TriggerJump(false); // Chybné číslo v řadě -> Pád do vody
+        }
+    }
+}
+
+function game2TriggerJump(success) {
+    if(recognition) try { recognition.stop(); } catch(e){}
+    
+    if (success) {
+        game2Phase = 'jumping';
+        game2Score++;
+        game2CurrentLevelSize++; // S každým úspěchem se řada o 1 prodlouží!
+        game2PlayerVisual.targetX = game2PlayerVisual.x + 180;
+        game2TargetCameraX = game2PlayerVisual.targetX - 200;
+        
+        let frame = 0;
+        let startX = game2PlayerVisual.x;
+        let jmp = setInterval(() => {
+            frame++; let p = frame / 30;
+            game2PlayerVisual.x = startX + (p * 180);
+            game2PlayerVisual.y = 180 - (4 * 70 * p * (1 - p)); // Parabola skoku
+            if(frame >= 30) {
+                clearInterval(jmp);
+                game2PlayerVisual.y = 180;
+                game2Phase = 'computer-speaking';
+                game2NextRound();
+            }
+        }, 20);
+    } else {
+        game2Phase = 'falling';
+        game2Lives--;
+        document.getElementById('game2-hud-lives').textContent = "❤️ ".repeat(game2Lives) + "🖤 ".repeat(3 - game2Lives);
+        
+        let frame = 0;
+        let startY = game2PlayerVisual.y;
+        let fall = setInterval(() => {
+            frame++;
+            game2PlayerVisual.y = startY + (frame * 1.5); // Žbluňk dolů
+            if(frame >= 20) {
+                clearInterval(fall);
+                if (game2Lives <= 0) {
+                    game2Phase = 'game-over';
+                    document.getElementById('game2-status').textContent = `💀 KONEC HRY! Dosáhl jsi skóre: ${game2Score}`;
+                    document.getElementById('game2-status').style.color = "#e74c3c";
+                    document.getElementById('game2-number-display').textContent = "Zkus to znovu přes tlačítko v Hubu.";
+                } else {
+                    // Respawn na aktuální kře
+                    game2PlayerVisual.y = 180;
+                    game2Phase = 'computer-speaking';
+                    game2NextRound();
+                }
+            }
+        }, 20);
+    }
+}
+
+function game2Loop() {
+    if (!game2Active) return;
+    
+    // Hladký posun kamery za hráčem
+    game2CameraX += (game2TargetCameraX - game2CameraX) * 0.05;
+    
+    // Kreslení scény
+    game2Ctx.clearRect(0, 0, game2Canvas.width, game2Canvas.height);
+    
+    // Nakreslení moře (Pozadí už má tmavě modrou barvu z CSS)
+    // Nakreslení vln
+    game2Ctx.fillStyle = "rgba(255,255,255,0.05)";
+    for(let i = 0; i < 10; i++) {
+        let waveX = (Date.now() * 0.05 + i * 120) % (game2Canvas.width + 100) - 50;
+        game2Ctx.fillRect(waveX, 150 + (i%3)*20, 40, 4);
+    }
+
+    // Vykreslení ledových ker (každých 180 pixelů jedna kra)
+    for (let i = 0; i < game2Score + 5; i++) {
+        let kraWorldX = 200 + (i * 180);
+        let kraScreenX = kraWorldX - game2CameraX;
+        
+        game2Ctx.fillStyle = "#e0f2fe";
+        game2Ctx.beginPath();
+        // Nakreslení nepravidelného šestiúhelníku jako kry
+        game2Ctx.moveTo(kraScreenX - 40, 200);
+        game2Ctx.lineTo(kraScreenX + 40, 200);
+        game2Ctx.lineTo(kraScreenX + 55, 215);
+        game2Ctx.lineTo(kraScreenX + 30, 230);
+        game2Ctx.lineTo(kraScreenX - 30, 230);
+        game2Ctx.lineTo(kraScreenX - 55, 215);
+        game2Ctx.closePath();
+        game2Ctx.fill();
+        
+        // Stín pod krou
+        game2Ctx.fillStyle = "#bae6fd";
+        game2Ctx.fill();
+        
+        // Číslo platformy pro orientaci
+        game2Ctx.fillStyle = "#0369a1";
+        game2Ctx.font = "10px sans-serif";
+        game2Ctx.fillText(`Kra ${i+1}`, kraScreenX - 12, 220);
+    }
+
+    // Vykreslení tučňáka / běžce
+    let pScreenX = game2PlayerVisual.x - game2CameraX;
+    let pScreenY = game2PlayerVisual.y;
+    
+    game2Ctx.save();
+    if(game2Phase === 'falling') {
+        game2Ctx.translate(pScreenX + 12, pScreenY - 10);
+        game2Ctx.rotate(Math.PI / 4);
+        game2Ctx.translate(-(pScreenX + 12), -(pScreenY - 10));
+    }
+    
+    // Tělo (Polární barvy - černobílá)
+    game2Ctx.fillStyle = "#1e293b";
+    game2Ctx.beginPath();
+    game2Ctx.arc(pScreenX + 12, pScreenY - 20, 14, 0, Math.PI * 2);
+    game2Ctx.fill();
+    
+    // Bříško
+    game2Ctx.fillStyle = "#ffffff";
+    game2Ctx.beginPath();
+    game2Ctx.arc(pScreenX + 12, pScreenY - 16, 9, 0, Math.PI * 2);
+    game2Ctx.fill();
+    
+    // Hlava
+    game2Ctx.fillStyle = "#1e293b";
+    game2Ctx.beginPath();
+    game2Ctx.arc(pScreenX + 12, pScreenY - 38, 8, 0, Math.PI * 2);
+    game2Ctx.fill();
+    
+    // Zobák
+    game2Ctx.fillStyle = "#f59e0b";
+    game2Ctx.beginPath();
+    game2Ctx.moveTo(pScreenX + 16, pScreenY - 39);
+    game2Ctx.lineTo(pScreenX + 25, pScreenY - 37);
+    game2Ctx.lineTo(pScreenX + 16, pScreenY - 35);
+    game2Ctx.fill();
+    
+    game2Ctx.restore();
+
+    requestAnimationFrame(gameLoop); // Hra využívá hlavní překreslovací smyčku
+    if(game2Phase !== 'game-over') {
+        requestAnimationFrame(game2Loop);
+    }
+}
 </script>
 </body>
 </html>
