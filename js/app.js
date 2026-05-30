@@ -1,6 +1,6 @@
 import { auth } from './firebase-config.js';
 import { updateUILanguage } from './localization.js';
-import { updateCreditsUI } from './credits.js';
+import { updateCreditsUI } from './credit-system.js';
 import './auth.js';
 import './menu.js';
 import './game1-run.js';

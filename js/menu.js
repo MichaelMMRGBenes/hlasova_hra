@@ -1,5 +1,5 @@
 import { changeScreen } from './app.js';
-import { checkAndConsumeCredit } from './credits.js';
+import { checkAndConsumeCredit } from './credit-system.js';
 
 // Výběr her z hlavního menu
 document.getElementById('menu-choose-game1').addEventListener('click', () => changeScreen('screen-game1-setup'));
