@@ -50,8 +50,8 @@ const JUMP_HEIGHT = 50;
 let cameraX = 0; 
 
 // --- CANVAS KONFIGURACE ---
-const canvas = document.getElementById('game2-canvas');
-const ctx = canvas ? canvas.getContext('2d') : null;
+let canvas = null;
+let ctx = null;
 
 // Hlasové rozhraní
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -90,7 +90,7 @@ if (SpeechRecognition) {
     };
 }
 
-// --- INICIALIZACE ---
+// --- INICIALIZACE POMOCÍ DELEGOVÁNÍ ---
 document.addEventListener('DOMContentLoaded', () => {
     populateLanguageSelects();
 
@@ -107,9 +107,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (quitBtn) {
         quitBtn.addEventListener('click', terminateGame);
     }
+});
 
-    if (canvas) {
-        canvas.addEventListener('click', handleCanvasClick);
+// GLOBÁLNÍ ODCHYTÁVÁNÍ KLIKNUTÍ
+document.addEventListener('click', (e) => {
+    if (e.target && e.target.id === 'game2-canvas') {
+        handleCanvasClick(e);
     }
 });
 
@@ -149,6 +152,9 @@ async function startGame2() {
         return;
     }
 
+    canvas = document.getElementById('game2-canvas');
+    ctx = canvas ? canvas.getContext('2d') : null;
+
     if (window.speechSynthesis) {
         window.speechSynthesis.cancel();
         const wakeupUtterance = new SpeechSynthesisUtterance(" ");
@@ -187,7 +193,6 @@ function startNewRound() {
     gameState = 'playing_sequence';
     accumulatedTranscript = "";
     
-    // Zajištění, že po odchodu z obchodu jsou HTML prvky opět viditelné
     const statusEl = document.getElementById('game2-status');
     const bubbleEl = document.getElementById('game2-bubble-display');
     if (statusEl) statusEl.style.display = 'block';
@@ -324,7 +329,6 @@ function evaluateUserAnswer() {
             
             if ((roundNumber - 1) % 3 === 0) {
                 gameState = 'shop';
-                // DEFENSIVNÍ OPRAVA: Skryjeme HTML elementy, aby nepřekážely klikání na Canvas
                 if (statusEl) { statusEl.textContent = ""; statusEl.style.display = 'none'; }
                 if (bubbleEl) { bubbleEl.textContent = ""; bubbleEl.style.display = 'none'; }
                 if (recognition) { try { recognition.stop(); } catch(e){} }
@@ -377,19 +381,20 @@ function handleGameEnd() {
 }
 
 function handleCanvasClick(e) {
-    if (!canvas) return;
-    const rect = canvas.getBoundingClientRect();
+    const activeCanvas = e.target;
+    if (!activeCanvas) return;
     
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
+    const rect = activeCanvas.getBoundingClientRect();
+    const scaleX = activeCanvas.width / rect.width;
+    const scaleY = activeCanvas.height / rect.height;
     const mouseX = (e.clientX - rect.left) * scaleX;
     const mouseY = (e.clientY - rect.top) * scaleY;
 
     if (gameState === 'shop') {
         const cardWidth = 140;
         const cardHeight = 110;
-        const cardY = canvas.height / 2 - 50; 
-        const spacing = (canvas.width - (3 * cardWidth)) / 4;
+        const cardY = activeCanvas.height / 2 - 50; 
+        const spacing = (activeCanvas.width - (3 * cardWidth)) / 4;
 
         const items = [
             { id: 'scarf', cost: 5 },
@@ -397,43 +402,55 @@ function handleCanvasClick(e) {
             { id: 'hat', cost: 10 }
         ];
 
-        // OPRAVENÁ SYNCHRONNÍ DETEKCE KLIKNUTÍ NA KARTY PŘEDMĚTŮ
+        let successfullyPurchased = false;
+
         items.forEach((item, idx) => {
             let itemX = spacing + idx * (cardWidth + spacing);
             if (mouseX >= itemX && mouseX <= itemX + cardWidth &&
                 mouseY >= cardY && mouseY <= cardY + cardHeight) {
                 
+                // Nákup proběhne jen pokud předmět ještě nevlastní a má dost peněz
                 if (!upgrades[item.id] && coins >= item.cost) {
                     coins -= item.cost;
                     upgrades[item.id] = true;
                     maxLives++; 
                     lives++; 
+                    successfullyPurchased = true;
                 }
             }
         });
 
-        // Tlačítko: Vstoupit na novou kru (Pokračovat v hraní)
+        // POKUD NAKOUPIL: Hned zavřeme obchod a pokračujeme do hry
+        if (successfullyPurchased) {
+            gameState = 'setup';
+            startNewRound();
+            return;
+        }
+
+        // Tlačítko: Vstoupit na novou kru (Pokračovat v hraní bez nákupu)
         let nextBtnW = 240; let nextBtnH = 38;
-        let nextBtnX = canvas.width / 2 - nextBtnW / 2;
+        let nextBtnX = activeCanvas.width / 2 - nextBtnW / 2;
         let nextBtnY = cardY + cardHeight + 20;
         if (mouseX >= nextBtnX && mouseX <= nextBtnX + nextBtnW && mouseY >= nextBtnY && mouseY <= nextBtnY + nextBtnH) {
             gameState = 'setup';
             startNewRound();
+            return;
         }
 
         // Tlačítko: Opustit hru
         let quitBtnW = 240; let quitBtnH = 38;
-        let quitBtnX = canvas.width / 2 - quitBtnW / 2;
+        let quitBtnX = activeCanvas.width / 2 - quitBtnW / 2;
         let quitBtnY = nextBtnY + nextBtnH + 12;
         if (mouseX >= quitBtnX && mouseX <= quitBtnX + quitBtnW && mouseY >= quitBtnY && mouseY <= quitBtnY + quitBtnH) {
             terminateGame();
+            return;
         }
     }
 
     if (gameState === 'highscore') {
         let btnW = 220; let btnH = 40;
-        let btnX = canvas.width / 2 - btnW / 2;
-        let btnY = canvas.height - 50;
+        let btnX = activeCanvas.width / 2 - btnW / 2;
+        let btnY = activeCanvas.height - 50;
         if (mouseX >= btnX && mouseX <= btnX + btnW && mouseY >= btnY && mouseY <= btnY + btnH) {
             terminateGame();
         }
