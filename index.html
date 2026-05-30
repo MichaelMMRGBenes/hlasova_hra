@@ -3,334 +3,245 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hlasový Přetahovaný Závod - Vyřazovací edice</title>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <title>Hlasový Závod: Vyřazovací Přetahovaná</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            text-align: center;
-            background-color: #e0f7fa;
+            background: #1a1a1a;
+            color: #ffffff;
             margin: 0;
             padding: 20px;
+            text-align: center;
         }
-        .container {
-            max-width: 700px;
+        .screen {
+            display: none;
+            max-width: 600px;
             margin: 0 auto;
-            background: white;
+            background: #2a2a2a;
             padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            position: relative;
-        }
-        .screen { display: none; }
-        .active { display: block; }
-
-        /* VLAJEČKY PRO JAZYKY */
-        .lang-selector {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            font-size: 24px;
-            cursor: pointer;
-            display: flex;
-            gap: 8px;
-            background: rgba(255, 255, 255, 0.8);
-            padding: 4px 8px;
-            border-radius: 20px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-        }
-        .lang-selector span {
-            transition: transform 0.1s;
-        }
-        .lang-selector span:hover {
-            transform: scale(1.25);
-        }
-
-        .menu-card {
-            background: #f8f9fa;
-            padding: 25px;
-            border-radius: 12px;
-            margin: 15px 0;
-            box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
-        }
-        .hud-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            justify-content: center;
-            background: #34495e;
-            padding: 10px;
-            border-radius: 8px;
-            margin-bottom: 10px;
-        }
-        .hud-badge {
-            background: rgba(255,255,255,0.15);
-            color: white;
-            padding: 5px 10px;
-            border-radius: 5px;
-            font-weight: bold;
-            font-size: 13px;
-        }
-        .hud-badge.mine {
-            background: #2980b9;
-            border: 1px solid #fff;
-        }
-        #number-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin: 10px 0;
-        }
-        #number-display {
-            font-size: 50px;
-            font-weight: bold;
-            color: #2c3e50;
-            background: #edf2f7;
             border-radius: 10px;
-            padding: 10px;
-            min-height: 80px;
-            width: 80%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         }
-        canvas {
-            width: 100%;
-            height: auto;
-            background-color: #2ecc71;
-            border: 4px solid #2c3e50;
-            border-radius: 10px;
+        .screen.active {
             display: block;
         }
-        input, select, button {
-            padding: 12px;
-            font-size: 15px;
-            border-radius: 6px;
-            border: 1px solid #ccc;
-            margin: 5px;
-        }
-        button {
-            background-color: #3498db;
-            color: white;
+        button, select, input {
+            padding: 10px 15px;
+            margin: 8px;
+            font-size: 16px;
+            border-radius: 5px;
             border: none;
             cursor: pointer;
+        }
+        button {
+            background: #3498db;
+            color: white;
             font-weight: bold;
             transition: background 0.2s;
         }
-        button:hover { background-color: #2980b9; }
-        .btn-success { background-color: #2ecc71; }
-        .btn-success:hover { background-color: #27ae60; }
-        .btn-large { font-size: 18px; padding: 15px 35px; }
-        .btn-secondary { background-color: #7f8c8d; }
-        .btn-secondary:hover { background-color: #95a5a6; }
-        .btn-orange { background-color: #e67e22; }
-        .btn-orange:hover { background-color: #d35400; }
-        
-        #status { font-style: italic; color: #7f8c8d; min-height: 35px; margin: 10px 0; }
-        .room-info { font-weight: bold; color: #e67e22; font-size: 20px; margin-bottom: 5px; }
-
-        .stats-table {
+        button:hover {
+            background: #2980b9;
+        }
+        input, select {
+            background: #444;
+            color: white;
+            border: 1px solid #555;
+        }
+        #game-canvas {
+            background: #222;
+            border: 3px solid #333;
+            border-radius: 5px;
+            margin: 15px auto;
+            display: block;
+        }
+        .hud-badge {
+            display: inline-block;
+            background: #333;
+            padding: 8px 12px;
+            margin: 5px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .hud-badge.mine {
+            border: 2px solid #2ecc71;
+            background: #1e3d29;
+        }
+        #number-display {
+            font-size: 48px;
+            font-weight: bold;
+            margin: 15px;
+            color: #f1c40f;
+            min-height: 58px;
+        }
+        table {
             width: 100%;
+            margin-top: 15px;
             border-collapse: collapse;
-            margin: 20px 0;
         }
-        .stats-table th, .stats-table td {
-            padding: 12px;
-            border: 1px solid #ddd;
-            text-align: center;
+        th, td {
+            padding: 10px;
+            border-bottom: 1px solid #444;
         }
-        .stats-table th { background-color: #34495e; color: white; }
-        .winner-announcement { font-size: 28px; color: #2ecc71; font-weight: bold; margin: 15px; }
+        th {
+            background: #333;
+        }
     </style>
 </head>
 <body>
-<div class="container">
-    <!-- SELEKTOR JAZYKA (zůstává v rohu) -->
-    <div class="lang-selector">...</div>
 
-    <!-- NOVÁ OBRAZOVKA: GLOBÁLNÍ HUB & PŘIHLÁŠENÍ -->
-    <div id="screen-global-hub" class="screen active">
-        <h2>🎮 Herní Portál</h2>
-        
-        <!-- Autentizační Box -->
-        <div class="menu-card" id="auth-box">
-            <div id="auth-logged-out">
-                <p>Nejste přihlášeni. Zbývá her na dnes: <b id="free-games-count">3</b></p>
-                <button onclick="loginWithGoogle()" class="btn-success">🔑 Přihlásit se přes Google</button>
-            </div>
-            <div id="auth-logged-in" style="display: none;">
-                <p>Vítej, <b id="user-display-name">Hráči</b>! (Premium účet - bez limitu her)</p>
-                <button onclick="logout()" class="btn-secondary">Odhlásit se</button>
-            </div>
-        </div>
-
-        <!-- Výběr her -->
-        <h3>Vyber si hru:</h3>
-        <div style="display: flex; flex-direction: column; gap: 15px; align-items: center;">
-            <button onclick="selectGame('voice-race')" class="btn-large" style="background-color: #3498db; width: 80%;">
-                🚀 1. Hlasový Přetahovaný Závod
-            </button>
-            <button class="btn-large btn-secondary" style="width: 80%; cursor: not-allowed;" disabled>
-                🔒 2. Další super hra (Již brzy...)
-            </button>
-        </div>
-    </div>
-<div class="container">
-
-    <div class="lang-selector">
-        <span onclick="setUILanguage('cs')" title="Čeština">🇨🇿</span>
-        <span onclick="setUILanguage('en')" title="English">🇬🇧</span>
-        <span onclick="setUILanguage('de')" title="Deutsch">🇩🇪</span>
-        <span onclick="setUILanguage('fr')" title="Français">🇫🇷</span>
-        <span onclick="setUILanguage('es')" title="Español">🇪🇸</span>
-        <span onclick="setUILanguage('fi')" title="Suomi">🇫🇮</span>
+    <div id="global-profile-box" style="margin-bottom: 20px;">
+        <span id="lbl-profile">Tvoje závodní jméno: </span>
+        <input type="text" id="player-name-input" value="Běžec" maxlength="15">
     </div>
 
-    <div id="global-profile-box" class="menu-card" style="background-color: #fff3e0; border: 2px solid #ffb74d; margin-bottom: 20px; margin-top: 25px;">
-        <label id="lbl-profile" style="font-weight: bold; color: #e67e22;">Tvoje závodní jméno: </label>
-        <input type="text" id="player-name-input" value="Běžec" maxlength="12" style="font-weight: bold; text-align: center; width: 180px;">
+    <div id="screen-global-hub" class="screen">
+        <h2>Game Hub</h2>
+        <p>Nemáš dostatek herních kreditů nebo vypršel limit.</p>
+        <button onclick="changeScreen('screen-main')">Zpět do menu</button>
     </div>
 
     <div id="screen-main" class="screen active">
-        <h2 id="main-title">Hlasový Závod: Vyřazovací Přetahovaná</h2>
-        <div style="display: flex; gap: 15px; justify-content: center; margin-top: 30px;">
-            <button id="main-choose-solo" class="btn-large" style="width: 240px;">🏃 Hrát sám (Proti PC)</button>
-            <button id="main-choose-online" class="btn-large" style="background-color: #9b59b6; width: 240px;">🌐 Online Multiplayer</button>
-        </div>
+        <h1 id="main-title">Hlasový Závod: Vyřazovací Přetahovaná</h1>
+        <button id="main-choose-solo">🏃 Hrát sám (Proti PC)</button>
+        <button id="main-choose-online">🌐 Online Multiplayer</button>
     </div>
 
     <div id="screen-solo-setup" class="screen">
         <h2 id="title-solo-setup">Nastavení Solo hry</h2>
-        <div class="menu-card">
-            <p><label id="lbl-diff">Obtížnost AI: </label>
+        <div>
+            <label id="lbl-diff">Obtížnost AI: </label>
             <select id="difficulty-select">
-                <option class="opt-diff-easy" value="easy">Lehká (Pomalé AI)</option>
-                <option class="opt-diff-med" value="medium" selected>Střední (Vyvážená)</option>
-                <option class="opt-diff-hard" value="hard">Těžká (Rychlá mašina)</option>
-            </select></p>
-
-            <p><label id="lbl-track-solo">Délka trati: </label>
+                <option value="easy" class="opt-diff-easy">Lehká</option>
+                <option value="medium" class="opt-diff-med" selected>Střední</option>
+                <option value="hard" class="opt-diff-hard">Těžká</option>
+            </select>
+        </div>
+        <div>
+            <label id="lbl-track-solo">Délka trati: </label>
             <select id="track-length-solo">
-                <option class="opt-track-7" value="7">Krátká (7 překážek)</option>
-                <option class="opt-track-15" value="15" selected>Střední (15 překážek)</option>
-                <option class="opt-track-30" value="30">Dlouhá (30 překážek)</option>
-            </select></p>
-
-            <p><label id="lbl-mode-solo">Mód hry: </label>
+                <option value="7" class="opt-track-7">Krátká (7)</option>
+                <option value="15" class="opt-track-15" selected>Střední (15)</option>
+                <option value="30" class="opt-track-30">Dlouhá (30)</option>
+            </select>
+        </div>
+        <div>
+            <label id="lbl-mode-solo">Mód hry: </label>
             <select id="game-mode-type-solo">
-                <option class="opt-mode-classic" value="classic">Klasický (Číslice -> Slovo)</option>
-                <option class="opt-mode-trans" value="translation" selected>Tlumočení (Hlas A -> Hlasová odpověď B)</option>
-            </select></p>
-            
-            <p id="solo-lang-a-box"><label id="lbl-lang-solo-a">Jazyk A (Kterým hra mluví): </label>
+                <option value="classic" class="opt-mode-classic">Klasický (Číslice -> Slovo)</option>
+                <option value="translation" class="opt-mode-trans" selected>Tlumočení (Hlas A -> Odpověď B)</option>
+            </select>
+        </div>
+        <div>
+            <label id="lbl-lang-solo-a">Jazyk A (Kterým hra mluví): </label>
             <select id="lang-select-solo-a">
-                <option value="en-US" selected>English</option>
                 <option value="cs-CZ">Čeština</option>
+                <option value="en-US" selected>English</option>
                 <option value="de-DE">Deutsch</option>
                 <option value="fr-FR">Français</option>
                 <option value="es-ES">Español</option>
                 <option value="fi-FI">Suomi</option>
-            </select></p>
-
-            <p id="solo-lang-b-box"><label id="lbl-lang-solo-b">Jazyk B (Kterým odpovídáš ty): </label>
+            </select>
+        </div>
+        <div id="solo-lang-b-box">
+            <label id="lbl-lang-solo-b">Jazyk B (Kterým odpovídáš ty): </label>
             <select id="lang-select-solo-b">
-                <option value="fi-FI" selected>Suomi</option>
                 <option value="cs-CZ">Čeština</option>
                 <option value="en-US">English</option>
                 <option value="de-DE">Deutsch</option>
+                <option value="fr-FR">Français</option>
                 <option value="es-ES">Español</option>
-            </select></p>
-            <br>
-            <button id="solo-start-game-btn" class="btn-success btn-large">Vstoupit na stadion</button>
+                <option value="fi-FI" selected>Suomi</option>
+            </select>
         </div>
-        <button class="btn-secondary btn-back" onclick="changeScreen('screen-main')">← Zpět</button>
+        <br>
+        <button class="btn-back">← Zpět</button>
+        <button id="solo-start-game-btn">Vstoupit na stadion</button>
     </div>
 
     <div id="screen-online-branch" class="screen">
         <h2 id="title-online-branch">Online Lobby</h2>
-        <div style="display: flex; gap: 15px; justify-content: center; margin-top: 20px;">
-            <button id="online-go-create" class="btn-success" style="padding: 15px 25px;">➕ Založit novou hru</button>
-            <button id="online-go-join" style="background-color: #e67e22; padding: 15px 25px;">🔑 Připojit se ke hře</button>
-        </div>
+        <button id="online-go-create">➕ Založit novou hru</button>
+        <button id="online-go-join">🔑 Připojit se ke hře</button>
         <br><br>
-        <button class="btn-secondary btn-back-main" onclick="changeScreen('screen-main')">← Zpět do hlavního menu</button>
+        <button class="btn-back-main">← Zpět do hlavního menu</button>
     </div>
 
     <div id="screen-online-create" class="screen">
         <h2 id="title-online-create">Založit novou místnost</h2>
-        <div class="menu-card">
-            <p><label id="lbl-max-players">Maximální počet hráčů: </label>
+        <div>
+            <label id="lbl-max-players">Maximální počet hráčů: </label>
             <select id="player-count-select">
-                <option value="2">2 Hráči (Duel)</option>
+                <option value="2" selected>2 Hráči</option>
                 <option value="3">3 Hráči</option>
                 <option value="4">4 Hráči</option>
-            </select></p>
-
-            <p><label id="lbl-track-online">Délka trati: </label>
+            </select>
+        </div>
+        <div>
+            <label id="lbl-track-online">Délka trati: </label>
             <select id="track-length-online">
-                <option class="opt-track-7" value="7">Krátká (7 překážek)</option>
-                <option class="opt-track-15" value="15" selected>Střední (15 překážek)</option>
-                <option class="opt-track-30" value="30">Dlouhá (30 překážek)</option>
-            </select></p>
-
-            <p><label id="lbl-mode-online">Mód hry: </label>
+                <option value="7" class="opt-track-7">7 překážek</option>
+                <option value="15" class="opt-track-15" selected>15 překážek</option>
+                <option value="30" class="opt-track-30">30 překážek</option>
+            </select>
+        </div>
+        <div>
+            <label id="lbl-mode-online">Mód hry: </label>
             <select id="game-mode-type-online">
-                <option class="opt-mode-classic" value="classic">Klasický (Číslice -> Slovo)</option>
-                <option class="opt-mode-trans" value="translation" selected>Tlumočení (Hlas A -> Hlasová odpověď B)</option>
-            </select></p>
-
-            <p id="online-lang-a-box"><label id="lbl-lang-online-a">Jazyk A (Hlasové zadání): </label>
+                <option value="classic" class="opt-mode-classic">Klasický</option>
+                <option value="translation" class="opt-mode-trans" selected>Tlumočení</option>
+            </select>
+        </div>
+        <div>
+            <label id="lbl-lang-online-a">Jazyk A: </label>
             <select id="lang-select-online-a">
                 <option value="en-US" selected>English</option>
                 <option value="cs-CZ">Čeština</option>
-                <option value="de-DE">Deutsch</option>
-                <option value="es-ES">Español</option>
-                <option value="fi-FI">Suomi</option>
-            </select></p>
-
-            <p id="online-lang-b-box"><label id="lbl-lang-online-b">Jazyk B (Mluvená odpověď): </label>
+            </select>
+        </div>
+        <div id="online-lang-b-box">
+            <label id="lbl-lang-online-b">Jazyk B: </label>
             <select id="lang-select-online-b">
                 <option value="fi-FI" selected>Suomi</option>
                 <option value="cs-CZ">Čeština</option>
-                <option value="en-US">English</option>
-                <option value="es-ES">Español</option>
-            </select></p>
-            <br>
-            <button id="create-room-execute-btn" class="btn-success btn-large">Vytvořit a vygenerovat kód</button>
+            </select>
         </div>
-        <button class="btn-secondary btn-back" onclick="changeScreen('screen-online-branch')">← Zpět</button>
+        <br>
+        <button class="btn-back">← Zpět</button>
+        <button id="create-room-execute-btn">Vytvořit a vygenerovat kód</button>
     </div>
 
     <div id="screen-online-join" class="screen">
         <h2 id="title-online-join">Zadej kód hry</h2>
-        <div class="menu-card">
-            <input type="text" id="room-code-input" placeholder="Kód místnosti" style="font-size: 20px; text-align: center; width: 180px;">
-            <br><br>
-            <button id="join-room-execute-btn" class="btn-large" style="background-color: #e67e22;">Vstoupit do místnosti</button>
-        </div>
-        <button class="btn-secondary btn-back" onclick="changeScreen('screen-online-branch')">← Zpět</button>
+        <input type="text" id="room-code-input" placeholder="Např. 1234" maxlength="6">
+        <br><br>
+        <button class="btn-back">← Zpět</button>
+        <button id="join-room-execute-btn">Vstoupit do místnosti</button>
     </div>
 
-    <div id="screen-game" class="screen">
-        <div id="room-id-display" class="room-info"></div>
-        <div id="hud-players-container" class="hud-container"></div>
-
-        <div id="number-container">
-            <div id="number-display">-</div>
-            <button id="repeat-voice-btn" class="btn-orange" style="display: none; padding: 8px 16px; margin-top: 6px; font-size: 14px;">🔁 Opakovat výslovnost</button>
+    <div id="screen-game" class="screen" style="max-width: 850px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; background: #111; padding: 10px; border-radius: 5px;">
+            <span id="room-id-display" style="font-weight: bold; color: #3498db;">Místnost: -</span>
+            <span id="status">Připrav se...</span>
+            <button id="start-match-btn" style="display:none; background:#2ecc71;">START ZÁVODU</button>
         </div>
 
-        <canvas id="game-canvas" width="650" height="320"></canvas>
-        <p id="status">Připrav se...</p>
-        <button id="start-match-btn" class="btn-success btn-large" style="display:none;">START ZÁVODU</button>
+        <div id="hud-players-container" style="margin: 10px 0;"></div>
+
+        <canvas id="game-canvas" width="800" height="280"></canvas>
+
+        <div id="number-display">-</div>
+        <button id="repeat-voice-btn" style="display:none; background:#9b59b6;">🔁 Opakovat výslovnost</button>
     </div>
 
     <div id="screen-victory" class="screen">
-        <div id="victory-title" class="winner-announcement">Vítěz!</div>
+        <h1 id="victory-title">🎉 Zvítězil jsi! 🎉</h1>
         <h3 id="title-stats">Výsledková tabule zápasu</h3>
-        <table class="stats-table">
+        
+        <table>
             <thead>
                 <tr>
                     <th id="th-player">Hráč</th>
@@ -341,90 +252,35 @@
             </thead>
             <tbody id="stats-tbody"></tbody>
         </table>
-        
-        <div id="replay-section" style="margin-top: 25px; display: none;">
+
+        <div id="replay-section" style="display:none; margin-top:20px;">
             <p id="lbl-replay">Chceš hrát znovu?</p>
-            <button id="rematch-btn" class="btn-success btn-large">Ano, nová hra</button>
-            <button id="btn-to-menu" onclick="changeScreen('screen-global-hub')" class="btn-secondary">Ne, do hlavního menu</button>
+            <button id="rematch-btn">Ano, nová hra</button>
+            <button id="btn-to-menu" onclick="changeScreen('screen-main')">Ne, do hlavního menu</button>
         </div>
     </div>
 
-</div>
-
-<script>
-    // --- KOORDINACE AUTENTIZACE A LIMITŮ ---
-const provider = new firebase.auth.GoogleAuthProvider();
-let currentUser = null;
-
-// Sleduje stav přihlášení uživatele
-firebase.auth().onAuthStateChanged((user) => {
-    currentUser = user;
-    const loggedOutDiv = document.getElementById('auth-logged-out');
-    const loggedInDiv = document.getElementById('auth-logged-in');
-    
-    if (user) {
-        loggedOutDiv.style.display = 'none';
-        loggedInDiv.style.display = 'block';
-        document.getElementById('user-display-name').textContent = user.displayName;
-        document.getElementById('player-name-input').value = user.displayName.substring(0, 12);
-    } else {
-        loggedOutDiv.style.display = 'block';
-        loggedInDiv.style.display = 'none';
+    <script>
+    // --- POMOCNÉ FUNKCE PRO KREDITY (Z původní části 1/3) ---
+    function checkAndConsumeGameCredit() {
+        let data = JSON.parse(localStorage.getItem('game_hub_limit')) || { count: 0 };
+        data.count++;
+        localStorage.setItem('game_hub_limit', JSON.stringify(data));
         updateFreeGamesUI();
-    }
-});
-
-function loginWithGoogle() {
-    firebase.auth().signInWithPopup(provider).catch(err => console.error(err));
-}
-
-function logout() {
-    firebase.auth().signOut();
-}
-
-// --- LOGIKA DENNÍHO LIMITU (3 HRY ZA DEN) ---
-function getLimitData() {
-    const today = new Date().toISOString().split('T')[0]; // Formát YYYY-MM-DD
-    let data = JSON.parse(localStorage.getItem('game_hub_limit'));
-    
-    // Pokud data neexistují nebo jsou ze starého dne, resetujeme počítadlo
-    if (!data || data.date !== today) {
-        data = { date: today, count: 0 };
-    }
-    return data;
-}
-
-function updateFreeGamesUI() {
-    if (currentUser) return;
-    const data = getLimitData();
-    const remaining = Math.max(0, 3 - data.count);
-    document.getElementById('free-games-count').textContent = remaining;
-}
-
-function checkAndConsumeGameCredit() {
-    // Přihlášený uživatel má neomezené hraní
-    if (currentUser) return true;
-
-    const data = getLimitData();
-    if (data.count >= 3) {
-        alert("🚨 Dosáhl jsi denního limitu 3 her! Pro neomezené hraní se bezplatně přihlas přes Google.");
-        return false;
+        return true;
     }
 
-    // Započítání hry
-    data.count++;
-    localStorage.setItem('game_hub_limit', JSON.stringify(data));
-    updateFreeGamesUI();
-    return true;
-}
-
-// --- NAVIGACE MEZI HERAMI ---
-function selectGame(gameId) {
-    if (gameId === 'voice-race') {
-        // Přepne z globálního hubu do hlavního menu první hry
-        changeScreen('screen-main');
+    function updateFreeGamesUI() {
+        console.log("Herní hub limit aktualizován.");
     }
-}
+
+    // --- NAVIGACE MEZI HERAMI ---
+    function selectGame(gameId) {
+        if (gameId === 'voice-race') {
+            changeScreen('screen-main');
+        }
+    }
+
     // --- INTEGRACE FIREBASE PROJEKTU ---
     const firebaseConfig = {
         apiKey: "AIzaSyADCqnyF13k2oHefln1rNBqvZm5_BnroPo",
@@ -436,11 +292,11 @@ function selectGame(gameId) {
         appId: "1:7010973655:web:a9134f8f83d4b1e104bd92",
         measurementId: "G-L3SHDVNWWW"
     };
-    
+        
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // --- DIČNÍK PRO MULTIJAZYČNOST ROZHRANÍ (I18N) ---
+    // --- SLOVNÍK PRO MULTIJAZYČNOST ROZHRANÍ (I18N) ---
     let currentUILang = 'cs';
     const uiTexts = {
         cs: {
@@ -595,8 +451,8 @@ function selectGame(gameId) {
         document.getElementById('lbl-max-players').textContent = t.lblMaxPlayers;
         document.getElementById('lbl-track-online').textContent = t.lblTrack;
         document.getElementById('lbl-mode-online').textContent = t.lblMode;
-        document.getElementById('lbl-lang-online-a').textContent = t.lblLangOnlineA;
-        document.getElementById('lbl-lang-online-b').textContent = t.lblLangOnlineB;
+        document.getElementById('lbl-lang-online-a').textContent = t.lblLangA; // OPRAVENO Z t.lblLangOnlineA
+        document.getElementById('lbl-lang-online-b').textContent = t.lblLangB; // OPRAVENO Z t.lblLangOnlineB
         document.getElementById('create-room-execute-btn').textContent = t.btnCreateExec;
         document.getElementById('title-online-join').textContent = t.titleJoinRoom;
         document.getElementById('join-room-execute-btn').textContent = t.btnJoinExec;
@@ -638,7 +494,6 @@ function selectGame(gameId) {
 
     const playerColors = ["#3498db", "#e74c3c", "#9b59b6", "#e67e22"];
 
-    // PŘIDÁNA ŠPANĚLŠTINA DO SLOVNÍCH MAP
     const languageMaps1To10 = {
         'cs-CZ': { 1: ['1', 'jeden', 'jedna'], 2: ['2', 'dva'], 3: ['3', 'tři'], 4: ['4', 'čtyři'], 5: ['5', 'pět'], 6: ['6', 'šest'], 7: ['7', 'sedm'], 8: ['8', 'osm'], 9: ['9', 'devět'], 10: ['10', 'deset'] },
         'en-US': { 1: ['1', 'one'], 2: ['2', 'two'], 3: ['3', 'three'], 4: ['4', 'four'], 5: ['5', 'five'], 6: ['6', 'six'], 7: ['7', 'seven'], 8: ['8', 'eight'], 9: ['9', 'nine'], 10: ['10', 'ten'] },
@@ -667,6 +522,7 @@ function selectGame(gameId) {
     let myRole = 'p1'; 
     let maxPlayersInRoom = 2;
     let botInterval = null;
+    let tripTimeout = null; // NOVÉ: Časovač pro penalizaci zakopnutí
     let lastSpokenNumber = 0; 
 
     let myState = { score: 0, lives: 3, currentNumber: 0, state: 'running', y: 0, jumpProgress: 0, worldX: START_WORLD_X, name: "Běžec" };
@@ -750,6 +606,7 @@ function selectGame(gameId) {
         if(recognition) try { recognition.stop(); } catch(e){}
         if(window.speechSynthesis) window.speechSynthesis.cancel();
         if(botInterval) clearInterval(botInterval);
+        if(tripTimeout) clearTimeout(tripTimeout); // Vyčištění časovače pádů
         if(roomRef) roomRef.off();
         
         let chosenName = document.getElementById('player-name-input').value.trim() || "Běžec";
@@ -762,6 +619,21 @@ function selectGame(gameId) {
     document.getElementById('main-choose-online').addEventListener('click', () => changeScreen('screen-online-branch'));
     document.getElementById('online-go-create').addEventListener('click', () => changeScreen('screen-online-create'));
     document.getElementById('online-go-join').addEventListener('click', () => changeScreen('screen-online-join'));
+
+    // Tlačítka zpět
+    document.querySelectorAll('.btn-back').forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (document.getElementById('screen-solo-setup').classList.contains('active') || 
+                document.getElementById('screen-online-branch').classList.contains('active')) {
+                changeScreen('screen-main');
+            } else {
+                changeScreen('screen-online-branch');
+            }
+        });
+    });
+    document.querySelectorAll('.btn-back-main').forEach(btn => {
+        btn.addEventListener('click', () => changeScreen('screen-main'));
+    });
 
     // START SÓLO
     document.getElementById('solo-start-game-btn').addEventListener('click', () => {
@@ -911,17 +783,16 @@ function selectGame(gameId) {
         return Math.floor(Math.random() * 100) + 1;
     }
 
-function executeStart() {
-    // KONTROLA KREDITU PŘED STARTEM
-    if (!checkAndConsumeGameCredit()) {
-        changeScreen('screen-global-hub'); // Návrat do hubu, pokud nemá kredit
-        return;
-    }
+    function executeStart() {
+        if (!checkAndConsumeGameCredit()) {
+            changeScreen('screen-global-hub'); 
+            return;
+        }
 
-    gameStarted = true;
-    startMatchBtn.style.display = 'none';
-    statusEl.textContent = uiTexts[currentUILang].statusGo;
-        
+        gameStarted = true;
+        startMatchBtn.style.display = 'none';
+        statusEl.textContent = uiTexts[currentUILang].statusGo;
+            
         if (currentModeType === 'translation') {
             repeatBtn.style.display = 'inline-block';
         }
@@ -1033,6 +904,7 @@ function executeStart() {
 
     function showVictoryScreen(winnerId, allPlayersList) {
         if(botInterval) clearInterval(botInterval);
+        if(tripTimeout) clearTimeout(tripTimeout); // Vyčištění timeoutu
         if(recognition) try { recognition.stop(); } catch(e){}
         if(window.speechSynthesis) window.speechSynthesis.cancel();
         repeatBtn.style.display = 'none';
@@ -1097,7 +969,10 @@ function executeStart() {
 
     if (SpeechRecognition) {
         recognition.onspeechend = () => {
-            setTimeout(() => {
+            // Pokud hráč právě mluvil, naplánujeme pád, ale nejdříve smažeme starý časovač
+            if (tripTimeout) clearTimeout(tripTimeout);
+            
+            tripTimeout = setTimeout(() => {
                 if (gameStarted && myState.state === 'running' && myState.lives > 0) {
                     triggerTrip();
                 }
@@ -1106,6 +981,12 @@ function executeStart() {
     }
 
     function triggerJump() {
+        // OPRAVENO: Pokud hráč uhodl správně, okamžitě zrušíme naplánované zakopnutí!
+        if (tripTimeout) {
+            clearTimeout(tripTimeout);
+            tripTimeout = null;
+        }
+
         myState.state = 'jumping'; myState.jumpProgress = 0;
         sendStateToFirebase();
 
@@ -1162,7 +1043,7 @@ function executeStart() {
         }
         ctx.fillStyle = "rgba(0,0,0,0.15)"; ctx.beginPath(); ctx.ellipse(x + 12, y, 12, 4, 0, 0, Math.PI * 2); ctx.fill();
         ctx.fillStyle = "rgba(255,255,255,0.9)"; ctx.font = "bold 10px sans-serif"; ctx.textAlign = "center";
-        ctx.fillText(name, x + 12, y - 46);
+        ctx.fillText(name, x + 12, y - 46, 70); // Přidán max-width pro oříznutí dlouhých jmen
         ctx.fillStyle = "#ffcc99"; ctx.beginPath(); ctx.arc(x + 12, y - 34, 6, 0, Math.PI * 2); ctx.fill();
         ctx.fillStyle = color; ctx.beginPath();
         ctx.roundRect ? ctx.roundRect(x + 3, y - 28, 18, 16, 4) : ctx.fillRect(x + 3, y - 28, 18, 16); ctx.fill();
@@ -1272,7 +1153,7 @@ function executeStart() {
         }
     }
 
-    // Inicializace výchozího jazyka na češtinu
+    // Inicializace výchozího jazyka na češtinu a vykreslení základního Canvasu
     setUILanguage('cs');
     draw();
 </script>
