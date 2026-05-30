@@ -77,7 +77,7 @@
                 <span class="mode-desc">Závodej v reálném čase proti ostatním hráčům.</span>
             </button>
         </div>
-        <button class="btn-back-main" data-i18n="back">Zpět do menu</button>
+        <button class="btn-back-main btn-back-to-main" data-i18n="back">Zpět do menu</button>
     </div>
 
     <div id="screen-solo-setup" class="screen">
@@ -100,7 +100,7 @@
                 <option value="de-DE">Deutsch</option>
                 <option value="fr-FR">Français</option>
                 <option value="es-ES">Español</option>
-                </select>
+            </select>
 
             <div id="solo-lang-b-box">
                 <label>Jazyk B (Vaše řeč):</label>
@@ -127,7 +127,7 @@
         </div>
 
         <button id="solo-start-game-btn" class="btn-success" style="margin-top: 15px;">Do herní místnosti</button>
-        <button class="btn-back">Zpět</button>
+        <button class="btn-back btn-back-to-main">Zpět</button>
     </div>
 
     <div id="screen-online-setup" class="screen">
@@ -177,7 +177,7 @@
                 <button id="join-room-execute-btn" class="btn-success" style="margin-top: 15px;">Vstoupit do místnosti</button>
             </div>
         </div>
-        <button class="btn-back" style="margin-top: 20px;">Zpět</button>
+        <button class="btn-back btn-back-to-main" style="margin-top: 20px;">Zpět</button>
     </div>
 
     <div id="screen-game" class="screen">
@@ -192,7 +192,7 @@
         </div>
 
         <canvas id="game-canvas" width="1000" height="320"></canvas>
-        <button id="game1-quit-btn" class="btn-back-main btn-danger" style="margin-top: 10px;">Opustit hru</button>
+        <button id="game1-quit-btn" class="btn-back-main btn-back-to-main btn-danger" style="margin-top: 10px;">Opustit hru</button>
     </div>
 
     <div id="screen-victory" class="screen">
@@ -213,17 +213,48 @@
         <div id="replay-section" style="display: none; text-align: center; margin-top: 20px;">
             <button id="rematch-btn" class="btn-success" style="padding: 10px 20px; font-size: 1.1rem;">Běžet znovu!</button>
         </div>
-        <button class="btn-back-main" style="margin-top: 15px;">Zpět do hlavního menu</button>
+        <button class="btn-back-main btn-back-to-main" style="margin-top: 15px;">Zpět do hlavního menu</button>
     </div>
 
     <div id="screen-game2-setup" class="screen">
         <h3 data-i18n="game2SetupTitle">Nastavení Pexesa</h3>
+        
+        <div class="setup-box" style="margin: 20px auto; display: flex; flex-direction: column; gap: 12px; max-width: 400px; text-align: left;">
+            <div>
+                <label for="game2-difficulty" style="display:block; font-weight:bold; margin-bottom:5px;">Obtížnost:</label>
+                <select id="game2-difficulty" style="padding: 6px; width: 100%;">
+                    <option value="easy">Lehká (3 čísla)</option>
+                    <option value="medium" selected>Střední (4 čísla)</option>
+                    <option value="hard">Těžká (5 čísel)</option>
+                </select>
+            </div>
+
+            <div>
+                <label for="game2-lang-a" style="display:block; font-weight:bold; margin-bottom:5px;">Jazyk A (Zadání z nahrávky):</label>
+                <select id="game2-lang-a" style="padding: 6px; width: 100%;">
+                    </select>
+            </div>
+
+            <div>
+                <label for="game2-lang-b" style="display:block; font-weight:bold; margin-bottom:5px;">Jazyk B (Tvoje odpověď):</label>
+                <select id="game2-lang-b" style="padding: 6px; width: 100%;">
+                    </select>
+            </div>
+        </div>
+
         <button id="game2-start-btn" style="background-color: #0284c7; color: white;" data-i18n="startIce">Vstoupit na kry</button>
-        <button class="btn-back-main" data-i18n="back">Zpět</button>
+        <button class="btn-back-main btn-back-to-main" data-i18n="back">Zpět</button>
     </div>
 
     <div id="screen-game2-play" class="screen">
-        <canvas id="game2-canvas" width="1000" height="320"></canvas>
+        <div class="game2-hud" style="margin-bottom: 15px; text-align: center;">
+            <h3 id="game2-status" style="color: #2c3e50; min-height: 28px;">🔊 Připravte se...</h3>
+            <div id="game2-bubble-display" style="background: #edf2f7; padding: 10px; border-radius: 8px; font-style: italic; display: inline-block; min-width: 200px; margin-top: 5px;">
+                ...
+            </div>
+        </div>
+
+        <canvas id="game2-canvas" width="1000" height="320" style="border:2px solid #cbd5e0; background:#1a365d; display:block; max-width:100%; margin: 0 auto 15px auto;"></canvas>
         <button id="game2-quit-btn" class="btn-danger" data-i18n="quitGame">Ukončit pexeso</button>
     </div>
 
