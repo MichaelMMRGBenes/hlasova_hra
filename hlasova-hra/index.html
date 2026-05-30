@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hlasová Jazyková Hra</title>
+    <link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+
+    <header id="global-header">
+        <div id="header-user-zone">
+            <span id="user-display-name">Anonymní běžec</span>
+            <span id="user-credits-display"></span>
+        </div>
+        <div id="header-lang-zone">
+            <select id="global-lang-selector">
+                <option value="cs">Čeština</option>
+                <option value="fi">Suomi</option>
+                <option value="de">Deutsch</option>
+                <option value="en">English</option>
+                <option value="fr">Français</option>
+                <option value="es">Español</option>
+            </select>
+        </div>
+    </header>
+
+    <div id="screen-auth" class="screen active">
+        <h2 data-i18n="authTitle">Přihlášení do hry</h2>
+        <div class="auth-box">
+            <input type="email" id="auth-email" placeholder="E-mail">
+            <input type="password" id="auth-password" placeholder="Heslo">
+            <button id="btn-login" data-i18n="authLogin">Přihlásit se</button>
+            <button id="btn-register" data-i18n="authRegister">Registrovat se</button>
+            <hr>
+            <button id="btn-google-login" style="background-color: #df4a32;">Google Login</button>
+            <button id="btn-anonymous-play" data-i18n="authAnon">Hrát bez přihlášení (5/den)</button>
+        </div>
+    </div>
+
+    <div id="screen-main" class="screen">
+        <h2 data-i18n="mainTitle">Hlavní Menu</h2>
+        <button id="btn-logout" class="btn-danger" data-i18n="logout">Odhlásit se / Zpět na přihlášení</button>
+        
+        <div class="games-grid">
+            <div class="game-card">
+                <h3 data-i18n="game1Name">1. Běh přes překážky</h3>
+                <p data-i18n="game1Desc">Rychlé vyslovování čísel. Skoč nebo zakopni!</p>
+                <button id="menu-choose-game1" data-i18n="playBtn">Hrát</button>
+            </div>
+            <div class="game-card">
+                <h3 data-i18n="game2Name">2. Polární pexeso</h3>
+                <p data-i18n="game2Desc">Poslouchej sekvence krychlí ledu a opakuj.</p>
+                <button id="menu-choose-game2" data-i18n="playBtn">Hrát</button>
+            </div>
+            <div class="game-card locked">
+                <h3>3. Již brzy...</h3>
+                <p>Nová hlasová hra se připravuje.</p>
+                <button disabled>🔒</button>
+            </div>
+            <div class="game-card locked">
+                <h3>4. Již brzy...</h3>
+                <p>Nová hlasová hra se připravuje.</p>
+                <button disabled>🔒</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="screen-game1-setup" class="screen">
+        <h3 data-i18n="game1SetupTitle">Nastavení Sólo / Multiplayer</h3>
+        <button id="game1-btn-solo" data-i18n="modeSolo">Sólo závod s AI</button>
+        <button id="game1-btn-multi" data-i18n="modeMulti">Multiplayer (Firebase)</button>
+        
+        <div id="game1-options-box" style="margin-top: 15px;">
+            <label data-i18n="labelDifficulty">Obtížnost bota:</label>
+            <select id="game1-difficulty">
+                <option value="easy">Easy</option>
+                <option value="medium" selected>Medium</option>
+                <option value="hard">Hard</option>
+            </select>
+
+            <label data-i18n="labelTrack">Délka trati:</label>
+            <select id="game1-track">
+                <option value="10">10</option>
+                <option value="15" selected>15</option>
+                <option value="30">30</option>
+            </select>
+
+            <label data-i18n="labelMode">Režim zkoušení:</label>
+            <select id="game1-type">
+                <option value="classic">Klasické čtení</option>
+                <option value="translation">Tlumočení / Překlad</option>
+            </select>
+        </div>
+
+        <br>
+        <button id="game1-start-btn" style="background-color: #2ecc71;" data-i18n="startRace">Odstartovat</button>
+        <button class="btn-back-to-main" data-i18n="back">Zpět</button>
+    </div>
+
+    <div id="screen-game1-play" class="screen">
+        <canvas id="game1-canvas" width="750" height="280"></canvas>
+        <br>
+        <button id="game1-quit-btn" class="btn-danger" data-i18n="quitGame">Opustit hru</button>
+    </div>
+
+    <div id="screen-game2-setup" class="screen">
+        <h3 data-i18n="game2SetupTitle">Nastavení Pexesa</h3>
+        <button id="game2-start-btn" style="background-color: #0284c7;" data-i18n="startIce">Vstoupit na kry</button>
+        <button class="btn-back-to-main" data-i18n="back">Zpět</button>
+    </div>
+
+    <div id="screen-game2-play" class="screen">
+        <canvas id="game2-canvas" width="750" height="300"></canvas>
+        <br>
+        <button id="game2-quit-btn" class="btn-danger" data-i18n="quitGame">Ukončit pexeso</button>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="js/firebase-config.js"></script> <script src="js/global-data.js"></script> <script src="js/credit-system.js"></script> <script src="js/game1-run.js"></script>
+
+    <script type="module" src="./js/app.js"></script>
+</body>
+</html>
