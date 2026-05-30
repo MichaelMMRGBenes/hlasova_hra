@@ -1,4 +1,5 @@
-// Výběr her z hlavního menu sladěný s index.html
+import { changeScreen } from './app.js';
+
 document.addEventListener('DOMContentLoaded', () => {
 
     const safeAddListener = (id, callback) => {
@@ -8,24 +9,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // Oprava ID prvků z index.html
-    safeAddListener('main-choose-solo', () => window.changeScreen('screen-solo-setup'));
-    safeAddListener('menu-choose-game2', () => window.changeScreen('screen-game2-setup'));
+    // Navigace pro Hru 2 (Pexeso)
+    // Otevírání a režimy Hry 1 (Běh) jsou nyní plně řízeny v game1-run.js, 
+    // aby nedocházelo ke kolizím s Firebase místnostmi.
+    safeAddListener('menu-choose-game2', () => changeScreen('screen-game2-setup'));
 
-    // Návratová tlačítka zpět do Hubu
+    // Univerzální návratová tlačítka zpět do hlavního menu (Hubu)
+    // Pro Hru 1 je tento klik odchytáván i v game1-run.js kvůli bezpečnému resetu enginu.
     document.querySelectorAll('.btn-back-to-main').forEach(btn => {
-        btn.addEventListener('click', () => window.changeScreen('screen-main'));
-    });
-
-    // Specifické větvení pro Hru 1 (Běh)
-    safeAddListener('game1-btn-solo', () => {
-        const box = document.getElementById('game1-options-box');
-        if (box) box.style.display = 'block';
-    });
-
-    safeAddListener('game1-btn-multi', () => {
-        const box = document.getElementById('game1-options-box');
-        if (box) box.style.display = 'none';
-        alert("Zde se v budoucnu napojí otevírání Firebase místností.");
+        btn.addEventListener('click', () => changeScreen('screen-main'));
     });
 });
