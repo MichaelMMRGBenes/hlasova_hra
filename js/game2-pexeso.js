@@ -407,6 +407,8 @@ function handleKeyDown(e) {
             upgrades[item.id] = true;
             maxLives++; 
             lives++; 
+            
+            // OPRAVA: Po úspěšném nákupu okamžitě opustíme obchod a jdeme do hry
             gameState = 'setup';
             startNewRound();
         }
@@ -758,7 +760,6 @@ function drawFloeIce(cracks) {
     }
 }
 
-// (zbytek pomocných vykreslovacích funkcí drawFloeSignpost a drawPlayer zůstává beze změny)
 function drawFloeSignpost(floeIdx) {
     ctx.save();
     ctx.translate(55, -20); 
