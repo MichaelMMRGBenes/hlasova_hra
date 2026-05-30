@@ -1,10 +1,43 @@
-// --- LOKALIZACE A UI ---
+import { checkAndConsumeCredit } from './credit-system.js';
+import { db } from './firebase-config.js';
+
+// --- LOKALIZACE A UI DICTIONARY (OPRAVENO) ---
+let currentUILang = 'cs';
+const uiTexts = {
+    cs: {
+        diffEasy: "Lehká", diffMed: "Střední", diffHard: "Těžká",
+        trackShort: "7 překážek", trackMed: "15 překážek", trackLong: "30 překážek",
+        modeClassic: "Klasické čtení", modeTrans: "Tlumočení / Překlad",
+        btnBack: "Zpět", btnBackMain: "Hlavní menu", soloLabel: "Sólo:", roomLabel: "Místnost:",
+        statusReady: "Připraveno...", statusReadyStart: "Můžete odstartovat!", statusWaitHost: "Čekání na hostitele...",
+        statusGo: "BĚŽ!", statusHearing: "Slyším:", statusListening: "Mluvte...", statusKick: "Zakopnutí!", statusKO: "Vyřazen!",
+        winnerText: "Vítězství!", loserText: "Porážka! Vyhrál:", badgeFinished: "Cíl", badgeEliminated: "K.O.", badgeNotFinished: "Nedoběhl"
+    },
+    fi: {
+        diffEasy: "Helppo", diffMed: "Keskitaso", diffHard: "Vaikea",
+        trackShort: "7 aitaa", trackMed: "15 aitaa", trackLong: "30 aitaa",
+        modeClassic: "Klassinen luku", modeTrans: "Käännös",
+        btnBack: "Takaisin", btnBackMain: "Päävalikko", soloLabel: "Yksinpeli:", roomLabel: "Huone:",
+        statusReady: "Valmis...", statusReadyStart: "Voit aloittaa!", statusWaitHost: "Odotetaan isäntää...",
+        statusGo: "JUOKSE!", statusHearing: "Kuulen:", statusListening: "Puhu...", statusKick: "Kompastuminen!", statusKO: "Eliminoitu!",
+        winnerText: "Voitto!", loserText: "Häviö! Voittaja:", badgeFinished: "Maali", badgeEliminated: "K.O.", badgeNotFinished: "Keskeytti"
+    },
+    en: {
+        diffEasy: "Easy", diffMed: "Medium", diffHard: "Hard",
+        trackShort: "7 Hurdles", trackMed: "15 Hurdles", trackLong: "30 Hurdles",
+        modeClassic: "Classic Reading", modeTrans: "Translation Mode",
+        btnBack: "Back", btnBackMain: "Main Menu", soloLabel: "Solo:", roomLabel: "Room:",
+        statusReady: "Ready...", statusReadyStart: "Ready to Start!", statusWaitHost: "Waiting for host...",
+        statusGo: "GO!", statusHearing: "Hearing:", statusListening: "Listening...", statusKick: "Tripped!", statusKO: "K.O.!",
+        winnerText: "Victory!", loserText: "Defeat! Winner:", badgeFinished: "Finished", badgeEliminated: "K.O.", badgeNotFinished: "DNF"
+    }
+};
+
 function setUILanguage(lang) {
-    currentUILang = lang;
+    currentUILang = ['cs', 'fi', 'en'].includes(lang) ? lang : 'en';
     const t = uiTexts[currentUILang];
     if (!t) return;
 
-    // Selektory / Optiony podle tříd
     document.querySelectorAll('.opt-diff-easy').forEach(el => el.textContent = t.diffEasy);
     document.querySelectorAll('.opt-diff-med').forEach(el => el.textContent = t.diffMed);
     document.querySelectorAll('.opt-diff-hard').forEach(el => el.textContent = t.diffHard);
@@ -58,7 +91,7 @@ let roomRef = null;
 let myRole = 'p1'; 
 let maxPlayersInRoom = 2;
 let botInterval = null;
-let tripTimeout = null; // NOVÉ: Časovač pro penalizaci zakopnutí
+let tripTimeout = null; 
 let lastSpokenNumber = 0; 
 
 let myState = { score: 0, lives: 3, currentNumber: 0, state: 'running', y: 0, jumpProgress: 0, worldX: START_WORLD_X, name: "Běžec" };
@@ -78,7 +111,7 @@ document.getElementById('game-mode-type-online').addEventListener('change', (e) 
     document.getElementById('online-lang-b-box').style.display = (e.target.value === 'translation') ? 'block' : 'none';
 });
 
-// --- HLASOVÁ REKOGNICE (JAZYK B) ---
+// --- HLASOVÁ REKOGNICE ---
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognition = null;
 if (SpeechRecognition) {
@@ -100,7 +133,7 @@ if (SpeechRecognition) {
     };
 }
 
-// --- TEXT-TO-SPEECH (JAZYK A) ---
+// --- TEXT-TO-SPEECH ---
 function speakTargetNumber(num, lang, forceCancel = false) {
     if (!window.speechSynthesis || currentModeType !== 'translation') return;
 
@@ -123,18 +156,6 @@ repeatBtn.addEventListener('click', () => {
     }
 });
 
-function changeScreen(screenId) {
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    document.getElementById(screenId).classList.add('active');
-
-    if(['screen-game', 'screen-victory'].includes(screenId)) {
-        document.getElementById('global-profile-box').style.display = 'none';
-    } else {
-        document.getElementById('global-profile-box').style.display = 'block';
-    }
-    if(screenId !== 'screen-game') resetGameEngine();
-}
-
 function resetGameEngine() {
     if(typeof game2Active !== 'undefined') game2Active = false;
     gameStarted = false;
@@ -143,7 +164,7 @@ function resetGameEngine() {
     if(recognition) try { recognition.stop(); } catch(e){}
     if(window.speechSynthesis) window.speechSynthesis.cancel();
     if(botInterval) clearInterval(botInterval);
-    if(tripTimeout) clearTimeout(tripTimeout); // Vyčištění časovače pádů
+    if(tripTimeout) clearTimeout(tripTimeout); 
     if(roomRef) roomRef.off();
 
     let chosenName = document.getElementById('player-name-input').value.trim() || "Běžec";
@@ -152,24 +173,16 @@ function resetGameEngine() {
     document.getElementById('replay-section').style.display = 'none';
 }
 
-document.getElementById('main-choose-solo').addEventListener('click', () => changeScreen('screen-solo-setup'));
-document.getElementById('main-choose-online').addEventListener('click', () => changeScreen('screen-online-branch'));
-document.getElementById('online-go-create').addEventListener('click', () => changeScreen('screen-online-create'));
-document.getElementById('online-go-join').addEventListener('click', () => changeScreen('screen-online-join'));
+document.getElementById('main-choose-solo').addEventListener('click', () => window.changeScreen('screen-solo-setup'));
 
 // Tlačítka zpět
 document.querySelectorAll('.btn-back').forEach(btn => {
     btn.addEventListener('click', () => {
-        if (document.getElementById('screen-solo-setup').classList.contains('active') || 
-            document.getElementById('screen-online-branch').classList.contains('active')) {
-            changeScreen('screen-main');
-        } else {
-            changeScreen('screen-online-branch');
-        }
+        window.changeScreen('screen-main');
     });
 });
 document.querySelectorAll('.btn-back-main').forEach(btn => {
-    btn.addEventListener('click', () => changeScreen('screen-main'));
+    btn.addEventListener('click', () => window.changeScreen('screen-main'));
 });
 
 // START SÓLO
@@ -186,104 +199,12 @@ document.getElementById('solo-start-game-btn').addEventListener('click', () => {
     myState.name = document.getElementById('player-name-input').value.trim() || "Ty";
     remotePlayers['bot'] = { score: 0, lives: 3, state: 'running', y: 0, jumpProgress: 0, worldX: START_WORLD_X, name: "AI Bot" };
 
-    changeScreen('screen-game');
+    window.changeScreen('screen-game');
     document.getElementById('room-id-display').textContent = `${uiTexts[currentUILang].soloLabel} ${currentModeType.toUpperCase()}`;
     startMatchBtn.style.display = 'inline-block';
     statusEl.textContent = uiTexts[currentUILang].statusReady;
     renderHUD();
 });
-
-// ONLINE CREATE
-document.getElementById('create-room-execute-btn').addEventListener('click', () => {
-    gameMode = 'online';
-    const code = Math.floor(1000 + Math.random() * 9000).toString();
-    maxPlayersInRoom = parseInt(document.getElementById('player-count-select').value);
-    currentModeType = document.getElementById('game-mode-type-online').value;
-    langA = document.getElementById('lang-select-online-a').value;
-    langB = (currentModeType === 'translation') ? document.getElementById('lang-select-online-b').value : langA;
-
-    stepsToFinish = parseInt(document.getElementById('track-length-online').value);
-    FINISH_LINE_WORLD_X = START_WORLD_X + (stepsToFinish * STEP_X);
-
-    myRole = 'p1'; myState.name = document.getElementById('player-name-input').value.trim() || "Hostitel";
-
-    roomRef = db.ref('rooms/' + code);
-    roomRef.set({
-        status: 'waiting', maxPlayers: maxPlayersInRoom, modeType: currentModeType, langA: langA, langB: langB, trackLength: stepsToFinish,
-        p1: { score: 0, lives: 3, state: 'running', currentNumber: 0, jumpProgress: 0, worldX: START_WORLD_X, name: myState.name }
-    });
-
-    changeScreen('screen-game');
-    document.getElementById('room-id-display').textContent = `${uiTexts[currentUILang].roomLabel} ${code}`;
-    statusEl.textContent = uiTexts[currentUILang].statusReady;
-    listenToRoom();
-});
-
-// ONLINE JOIN
-document.getElementById('join-room-execute-btn').addEventListener('click', () => {
-    gameMode = 'online';
-    const code = document.getElementById('room-code-input').value.trim();
-    if(!code) return;
-
-    let chosenName = document.getElementById('player-name-input').value.trim() || "Závodník";
-    roomRef = db.ref('rooms/' + code);
-    roomRef.once('value', (snap) => {
-        const data = snap.val();
-        if(!data) { alert("Místnost neexistuje!"); return; }
-        if(data.status === 'playing' || data.status === 'finished') { alert("Závod už odstartoval!"); return; }
-
-        let activeKeys = Object.keys(data).filter(k => k.startsWith('p'));
-        if(activeKeys.length >= data.maxPlayers) { alert("Místnost je plná!"); return; }
-
-        myRole = 'p' + (activeKeys.length + 1); myState.name = chosenName;
-        currentModeType = data.modeType || 'classic'; langA = data.langA; langB = data.langB;
-
-        stepsToFinish = data.trackLength || 15;
-        FINISH_LINE_WORLD_X = START_WORLD_X + (stepsToFinish * STEP_X);
-
-        let updates = {};
-        updates[myRole] = { score: 0, lives: 3, state: 'running', currentNumber: 0, jumpProgress: 0, worldX: START_WORLD_X, name: myState.name };
-        if(activeKeys.length + 1 === data.maxPlayers) updates['status'] = 'ready';
-
-        roomRef.update(updates); changeScreen('screen-game');
-        document.getElementById('room-id-display').textContent = `${uiTexts[currentUILang].roomLabel} ${code}`;
-        listenToRoom();
-    });
-});
-
-// POSLECH FIREBASE MÍSTNOSTI
-function listenToRoom() {
-    roomRef.on('value', (snap) => {
-        const data = snap.val(); if(!data) return;
-
-        maxPlayersInRoom = data.maxPlayers;
-        currentModeType = data.modeType || 'classic';
-        langA = data.langA; langB = data.langB;
-
-        stepsToFinish = data.trackLength || 15;
-        FINISH_LINE_WORLD_X = START_WORLD_X + (stepsToFinish * STEP_X);
-
-        let keys = Object.keys(data).filter(k => k.startsWith('p'));
-        remotePlayers = {};
-        keys.forEach(k => {
-            if(k !== myRole) remotePlayers[k] = data[k];
-            else if(gameStarted) myState.currentNumber = data[myRole].currentNumber;
-        });
-
-        renderHUD(); 
-        checkWinConditions();
-
-        if (data.status === 'ready' && !gameStarted) {
-            if (myRole === 'p1') {
-                startMatchBtn.style.display = 'inline-block';
-                statusEl.textContent = uiTexts[currentUILang].statusReadyStart;
-            } else {
-                statusEl.textContent = uiTexts[currentUILang].statusWaitHost;
-            }
-        }
-        if (data.status === 'playing' && !gameStarted) executeStart();
-    });
-}
 
 function renderHUD() {
     hudContainer.innerHTML = "";
@@ -307,13 +228,6 @@ function renderHUD() {
 startMatchBtn.addEventListener('click', () => {
     if (gameMode === 'solo') {
         executeStart();
-    } else if (myRole === 'p1' && roomRef) {
-        let keys = [myRole, ...Object.keys(remotePlayers)];
-        let updates = { status: 'playing' };
-        keys.forEach(k => {
-            updates[k + '/currentNumber'] = getRandomTargetNumber();
-        });
-        roomRef.update(updates);
     }
 });
 
@@ -321,9 +235,12 @@ function getRandomTargetNumber() {
     return Math.floor(Math.random() * 100) + 1;
 }
 
-function executeStart() {
-    if (!checkAndConsumeGameCredit()) {
-        changeScreen('screen-global-hub'); 
+// OPRAVENO: Funkce je nyní asynchronní a správně čeká na vyhodnocení kreditů
+async function executeStart() {
+    const creditCheck = await checkAndConsumeCredit();
+    if (!creditCheck.allowed) {
+        alert("Vyčerpali jste volné kredity pro dnešní den.");
+        window.changeScreen('screen-main'); 
         return;
     }
 
@@ -442,7 +359,7 @@ function checkWinConditions() {
 
 function showVictoryScreen(winnerId, allPlayersList) {
     if(botInterval) clearInterval(botInterval);
-    if(tripTimeout) clearTimeout(tripTimeout); // Vyčištění timeoutu
+    if(tripTimeout) clearTimeout(tripTimeout); 
     if(recognition) try { recognition.stop(); } catch(e){}
     if(window.speechSynthesis) window.speechSynthesis.cancel();
     repeatBtn.style.display = 'none';
@@ -467,7 +384,7 @@ function showVictoryScreen(winnerId, allPlayersList) {
         tbody.appendChild(tr);
     });
 
-    changeScreen('screen-victory');
+    window.changeScreen('screen-victory');
     setTimeout(() => { document.getElementById('replay-section').style.display = 'block'; }, 1500);
 }
 
@@ -477,16 +394,8 @@ document.getElementById('rematch-btn').addEventListener('click', () => {
         gameMode = 'solo'; myRole = 'p1';
         myState.name = document.getElementById('player-name-input').value.trim() || "Ty";
         remotePlayers['bot'] = { score: 0, lives: 3, state: 'running', y: 0, jumpProgress: 0, worldX: START_WORLD_X, name: "AI Bot" };
-        changeScreen('screen-game'); startMatchBtn.style.display = 'inline-block';
+        window.changeScreen('screen-game'); startMatchBtn.style.display = 'inline-block';
         statusEl.textContent = uiTexts[currentUILang].statusReady; renderHUD();
-    } else if (roomRef) {
-        gameMode = 'online';
-        if (myRole === 'p1') {
-            roomRef.set({ status: 'ready', maxPlayers: maxPlayersInRoom, modeType: currentModeType, langA: langA, langB: langB, trackLength: stepsToFinish,
-                p1: { score: 0, lives: 3, state: 'running', currentNumber: 0, jumpProgress: 0, worldX: START_WORLD_X, name: myState.name }
-            });
-        }
-        changeScreen('screen-game'); listenToRoom();
     }
 });
 
@@ -507,7 +416,6 @@ function handleLiveVoiceInput(rawText) {
 
 if (SpeechRecognition) {
     recognition.onspeechend = () => {
-        // Pokud hráč právě mluvil, naplánujeme pád, ale nejdříve smažeme starý časovač
         if (tripTimeout) clearTimeout(tripTimeout);
 
         tripTimeout = setTimeout(() => {
@@ -519,7 +427,6 @@ if (SpeechRecognition) {
 }
 
 function triggerJump() {
-    // OPRAVENO: Pokud hráč uhodl správně, okamžitě zrušíme naplánované zakopnutí!
     if (tripTimeout) {
         clearTimeout(tripTimeout);
         tripTimeout = null;
@@ -581,7 +488,7 @@ function drawRunner(x, y, color, name, isTripping, isJumping) {
     }
     ctx.fillStyle = "rgba(0,0,0,0.15)"; ctx.beginPath(); ctx.ellipse(x + 12, y, 12, 4, 0, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = "rgba(255,255,255,0.9)"; ctx.font = "bold 10px sans-serif"; ctx.textAlign = "center";
-    ctx.fillText(name, x + 12, y - 46, 70); // Přidán max-width pro oříznutí dlouhých jmen
+    ctx.fillText(name, x + 12, y - 46, 70); 
     ctx.fillStyle = "#ffcc99"; ctx.beginPath(); ctx.arc(x + 12, y - 34, 6, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = color; ctx.beginPath();
     ctx.roundRect ? ctx.roundRect(x + 3, y - 28, 18, 16, 4) : ctx.fillRect(x + 3, y - 28, 18, 16); ctx.fill();

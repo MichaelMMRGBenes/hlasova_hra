@@ -1,10 +1,6 @@
-import { changeScreen } from './app.js';
-import { checkAndConsumeCredit } from './credit-system.js';
-
-// Vše zabalíme do DOMContentLoaded, aby se kód spustil až po načtení HTML
+// Výběr her z hlavního menu sladěný s index.html
 document.addEventListener('DOMContentLoaded', () => {
 
-    // Pomocná funkce pro bezpečné přidání listeneru
     const safeAddListener = (id, callback) => {
         const element = document.getElementById(id);
         if (element) {
@@ -12,13 +8,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // Výběr her z hlavního menu
-    safeAddListener('menu-choose-game1', () => changeScreen('screen-game1-setup'));
-    safeAddListener('menu-choose-game2', () => changeScreen('screen-game2-setup'));
+    // Oprava ID prvků z index.html
+    safeAddListener('main-choose-solo', () => window.changeScreen('screen-solo-setup'));
+    safeAddListener('menu-choose-game2', () => window.changeScreen('screen-game2-setup'));
 
     // Návratová tlačítka zpět do Hubu
     document.querySelectorAll('.btn-back-to-main').forEach(btn => {
-        btn.addEventListener('click', () => changeScreen('screen-main'));
+        btn.addEventListener('click', () => window.changeScreen('screen-main'));
     });
 
     // Specifické větvení pro Hru 1 (Běh)
