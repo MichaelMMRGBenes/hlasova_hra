@@ -145,18 +145,22 @@ if (soloStartBtn) {
     });
 }
 
-// --- MULTIPLAYER REALTIME SYNCHRONIZACE VIA FIREBASE ---
+// --- MULTIPLAYER REALTIME SYNCHRONIZACE VIA FIREBASE (DYNAMICKÁ) ---
 const createRoomBtn = document.getElementById('create-room-execute-btn');
 if (createRoomBtn) {
     createRoomBtn.addEventListener('click', async () => {
         const code = Math.floor(1000 + Math.random() * 9000).toString();
-        gameMode = 'online'; myRole = 'p1';
+        gameMode = 'online'; 
+        myRole = 'p1'; // Zakladatel je vždy p1
         
         currentModeType = document.getElementById('game-mode-type-online').value;
         langA = document.getElementById('lang-select-online-a').value;
         let bSelect = document.getElementById('lang-select-online-b').value;
         langB = (currentModeType === 'translation') ? bSelect : langA;
         stepsToFinish = parseInt(document.getElementById('track-length-online').value);
+        
+        // Načtení zvoleného limitu hráčů
+        const maxPlayers = parseInt(document.getElementById('max-players-online').value) || 2;
 
         let chosenName = document.getElementById('player-name-input').value.trim() || "Hostitel";
         myState = { score: 0, lives: 3, currentNumber: getRandomTargetNumber(), state: 'running', y: 0, jumpProgress: 0, worldX: START_WORLD_X, name: chosenName };
@@ -168,6 +172,7 @@ if (createRoomBtn) {
             langA: langA,
             langB: langB,
             stepsToFinish: stepsToFinish,
+            maxPlayers: maxPlayers,
             p1: myState
         });
 
@@ -188,16 +193,27 @@ if (joinRoomBtn) {
         const roomData = snapshot.val();
         if(roomData.status !== 'waiting') return alert("Závod již odstartoval.");
 
-        gameMode = 'online'; myRole = 'p2'; 
+        // Dynamické zjištění obsazených slotů (p1, p2, p3, p4)
+        const playerKeys = Object.keys(roomData).filter(key => key.startsWith('p') && typeof roomData[key] === 'object');
+        const maxPlayers = roomData.maxPlayers || 2;
+
+        if (playerKeys.length >= maxPlayers) {
+            return alert(`Místnost je plná! Maximální počet hráčů je ${maxPlayers}.`);
+        }
+
+        gameMode = 'online'; 
+        // Přiřadí další volný slot (např. p2, p3...)
+        myRole = 'p' + (playerKeys.length + 1); 
+        
         currentModeType = roomData.currentModeType;
         langA = roomData.langA;
         langB = roomData.langB;
         stepsToFinish = roomData.stepsToFinish;
 
-        let chosenName = document.getElementById('player-name-input').value.trim() || "Host";
+        let chosenName = document.getElementById('player-name-input').value.trim() || `Hráč ${playerKeys.length + 1}`;
         myState = { score: 0, lives: 3, currentNumber: roomData.p1.currentNumber, state: 'running', y: 0, jumpProgress: 0, worldX: START_WORLD_X, name: chosenName };
 
-        await roomRef.child('p2').set(myState);
+        await roomRef.child(myRole).set(myState);
         initMultiplayerLobby(code);
     });
 }
@@ -222,8 +238,10 @@ function initMultiplayerLobby(code) {
         const data = snapshot.val();
         if(!data) return;
 
+        // Vyčistit a znovu načíst všechny připojené soupeře (p1 až p4)
+        remotePlayers = {};
         Object.keys(data).forEach(key => {
-            if(key !== myRole && (key === 'p1' || key === 'p2')) {
+            if(key !== myRole && key.startsWith('p') && typeof data[key] === 'object') {
                 remotePlayers[key] = data[key];
             }
         });
@@ -561,7 +579,10 @@ function triggerTrip() {
         }
     }, 1200);
 }
-
+function setUILanguage() {
+    const currentLang = getActiveLangKey();
+    // Zde případně doplňte překlady statických prvků v DOMu pomocí currentLang
+}
 function sendStateToFirebase() {
     if (gameMode === 'online' && roomRef) {
         roomRef.child(myRole).update({
