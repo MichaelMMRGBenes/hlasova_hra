@@ -2,7 +2,7 @@ import { checkAndConsumeCredit } from './credit-system.js';
 import { db } from './firebase-config.js';
 
 // --- LOKALIZACE A UI DICTIONARY (OPRAVENO) ---
-let currentUILang = 'cs';
+let currentUILang = localStorage.getItem('ui_lang') || 'cs';
 const uiTexts = {
     cs: {
         diffEasy: "Lehká", diffMed: "Střední", diffHard: "Těžká",
@@ -34,7 +34,12 @@ const uiTexts = {
 };
 
 function setUILanguage(lang) {
-    currentUILang = ['cs', 'fi', 'en'].includes(lang) ? lang : 'en';
+    // Pokud lang nepřijde (volání na řádku 695), vezme se již uložený currentUILang
+    const targetLang = lang || currentUILang;
+    
+    // Zde už nepoužíváš const/let, protože proměnná je definovaná na začátku souboru
+    currentUILang = ['cs', 'fi', 'en'].includes(targetLang) ? targetLang : 'en';
+    
     const t = uiTexts[currentUILang];
     if (!t) return;
 
