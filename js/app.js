@@ -4,7 +4,7 @@ import { updateCreditsUI } from './credit-system.js';
 import './auth.js';
 import './menu.js';
 import './game1-run.js';
-// import './game2-pexeso.js'; // Odkomentuj po přidání souboru
+import './game2-pexeso.js'; // Odkomentuj po přidání souboru
 
 export let globalGameState = {
     currentLanguage: 'cs',
