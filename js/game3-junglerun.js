@@ -1,5 +1,5 @@
 import { changeScreen } from './app.js';
-import { checkAndConsumeCredit as consumeCredit } from './credit-system.js';
+
 
 
 let animationFrameId = null;
