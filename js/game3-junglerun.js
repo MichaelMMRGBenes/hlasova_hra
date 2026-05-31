@@ -1,6 +1,5 @@
 import { changeScreen } from './app.js';
-
-import { consumeCredit } from './credit-system.js'; 
+import { checkAndConsumeCredit } from './credit-system.js'; //  Správný název
 
 
 let animationFrameId = null;
