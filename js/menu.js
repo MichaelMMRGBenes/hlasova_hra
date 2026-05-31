@@ -10,12 +10,12 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // Navigace pro Hru 2 (Pexeso)
-    // Otevírání a režimy Hry 1 (Běh) jsou nyní plně řízeny v game1-run.js, 
-    // aby nedocházelo ke kolizím s Firebase místnostmi.
     safeAddListener('menu-choose-game2', () => changeScreen('screen-game2-setup'));
 
+    // 🌟 PŘIDÁNO: Navigace pro Hru 3 (Útěk před pumou)
+    safeAddListener('menu-choose-game3', () => changeScreen('screen-game3-play'));
+
     // Univerzální návratová tlačítka zpět do hlavního menu (Hubu)
-    // Pro Hru 1 je tento klik odchytáván i v game1-run.js kvůli bezpečnému resetu enginu.
     document.querySelectorAll('.btn-back-to-main').forEach(btn => {
         btn.addEventListener('click', () => changeScreen('screen-main'));
     });

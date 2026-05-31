@@ -15,11 +15,12 @@ export let globalGameState = {
 export function changeScreen(screenId) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     const target = document.getElementById(screenId);
-    if (target) target.add('active');
+    
+    // Změna z target.add('active') na target.classList.add('active')
+    if (target) target.classList.add('active'); 
     
     const profileBox = document.getElementById('global-profile-box');
     if (profileBox) {
-        // 👈 2. UPRAVENO: Přidána ID obrazovka Hry 3, aby se schoval profilový box během běhu
         if (['screen-game', 'screen-victory', 'screen-game2-play', 'screen-game3-play'].includes(screenId)) {
             profileBox.style.display = 'none';
         } else {
