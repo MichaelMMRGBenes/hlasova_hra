@@ -291,7 +291,7 @@ async function playAuditorySequence() {
         if (bubbleEl) bubbleEl.textContent = "🎵 ???";
 
         await speakNumberPromise(num, langA, targetSpeed);
-        await delay(350); 
+        await delay(600); 
     }
 
     if (!gameActive) return;
@@ -581,88 +581,128 @@ function gameRenderLoop() {
     if (gameState === 'highscore') {
         ctx.fillStyle = "#111827";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = "#f3f4f6"; ctx.font = "bold 22px sans-serif"; ctx.textAlign = "center";
+        ctx.fillStyle = "#f1c40f"; ctx.font = "bold 24px sans-serif"; ctx.textAlign = "center";
+        ctx.shadowColor = "rgba(241, 196, 15, 0.3)"; ctx.shadowBlur = 8;
         ctx.fillText("🏆 SÍŇ SLÁVY - TOP 10 🏆", canvas.width / 2, 45);
+        ctx.shadowBlur = 0; // Reset stínu
 
-        let startY = 95; let rowH = 24;
+        let startY = 100; let rowH = 26;
         if (topScores.length === 0) {
             topScores = JSON.parse(localStorage.getItem('game2_highscores') || '[]').slice(0, 10);
         }
         topScores.forEach((entry, idx) => {
             let yPos = startY + idx * rowH;
-            ctx.font = "14px sans-serif";
+            ctx.font = "15px sans-serif";
             ctx.fillStyle = idx === 0 ? "#f1c40f" : idx === 1 ? "#e2e8f0" : idx === 2 ? "#cd7f32" : "#ffffff";
             ctx.textAlign = "left"; ctx.fillText(`${idx + 1}. ${entry.name}`, canvas.width / 2 - 160, yPos);
             ctx.textAlign = "right"; ctx.fillText(`${entry.score} b. (Kolo ${entry.round})`, canvas.width / 2 + 160, yPos);
         });
 
-        let btnW = 220; let btnH = 40; let btnX = canvas.width / 2 - btnW / 2; let btnY = canvas.height - 50;
-        ctx.fillStyle = "#3498db"; ctx.fillRect(btnX, btnY, btnW, btnH);
+        let btnW = 240; let btnH = 42; let btnX = canvas.width / 2 - btnW / 2; let btnY = canvas.height - 55;
+        ctx.fillStyle = "#3498db"; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(btnX, btnY, btnW, btnH, 6) : ctx.fillRect(btnX, btnY, btnW, btnH); ctx.fill();
         ctx.fillStyle = "#ffffff"; ctx.font = "bold 14px sans-serif"; ctx.textAlign = "center";
-        ctx.fillText("Zpět do hlavního menu", canvas.width / 2, btnY + 25);
+        ctx.fillText("Zpět do hlavního menu", canvas.width / 2, btnY + 26);
         return;
     }
 
     if (gameState === 'shop') {
-        ctx.fillStyle = "#1a202c";
+        ctx.fillStyle = "#0f172a";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.fillStyle = "#ffffff"; ctx.font = "bold 22px sans-serif"; ctx.textAlign = "center";
         ctx.fillText("❄️ POLÁRNÍ OBCHOD - VYBAV SE! ❄️", canvas.width / 2, 35);
-        ctx.font = "bold 15px sans-serif"; ctx.fillStyle = "#f1c40f";
+        ctx.font = "bold 16px sans-serif"; ctx.fillStyle = "#f1c40f";
         ctx.fillText(`Tvoje peněženka: 🪙 ${coins} mincí`, canvas.width / 2, 62);
 
         const currentShopItems = getAvailableShopItems();
-        const cardWidth = 140; const cardHeight = 110; const cardY = canvas.height / 2 - 50; 
+        const cardWidth = 145; const cardHeight = 115; const cardY = canvas.height / 2 - 45; 
         const totalCards = currentShopItems.length;
         const spacing = totalCards > 0 ? (canvas.width - (totalCards * cardWidth)) / (totalCards + 1) : canvas.width / 2;
 
         if (totalCards === 0) {
-            ctx.fillStyle = "#48bb78"; ctx.font = "bold 16px sans-serif"; ctx.textAlign = "center";
+            ctx.fillStyle = "#48bb78"; ctx.font = "bold 18px sans-serif"; ctx.textAlign = "center";
             ctx.fillText("🎉 Vše zakoupeno! Jsi naprostý vládce Arktidy!", canvas.width / 2, cardY + 40);
         }
 
         currentShopItems.forEach((item, idx) => {
             let itemX = spacing + idx * (cardWidth + spacing);
-            ctx.fillStyle = "#cbd5e1"; ctx.font = "bold 11px sans-serif"; ctx.textAlign = "center";
+            ctx.fillStyle = "#94a3b8"; ctx.font = "bold 12px sans-serif"; ctx.textAlign = "center";
             const keysHint = ["Klávesa [A]", "Klávesa [W]", "Klávesa [D]"];
-            ctx.fillText(keysHint[idx], itemX + cardWidth / 2, cardY - 8);
+            ctx.fillText(keysHint[idx], itemX + cardWidth / 2, cardY - 10);
 
-            // Vylepšený design karet v obchodě stínováním
-            ctx.fillStyle = "#2d3748"; ctx.strokeStyle = "#3182ce"; ctx.lineWidth = 2;
-            ctx.fillRect(itemX, cardY, cardWidth, cardHeight); ctx.strokeRect(itemX, cardY, cardWidth, cardHeight);
+            // Vylepšený design karet v obchodě stínováním a zářením
+            ctx.fillStyle = "#1e293b"; ctx.strokeStyle = coins >= item.cost ? "#3b82f6" : "#475569"; ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.roundRect ? ctx.roundRect(itemX, cardY, cardWidth, cardHeight, 8) : ctx.fillRect(itemX, cardY, cardWidth, cardHeight);
+            ctx.fill(); ctx.stroke();
 
-            ctx.fillStyle = "#ffffff"; ctx.font = "bold 10px sans-serif"; ctx.textAlign = "center";
-            ctx.fillText(item.name, itemX + cardWidth / 2, cardY + 22);
-            ctx.font = "28px sans-serif"; ctx.fillText(item.icon, itemX + cardWidth / 2, cardY + 62);
-            ctx.font = "bold 12px sans-serif"; ctx.fillStyle = coins >= item.cost ? "#f6e05e" : "#e53e3e";
-            ctx.fillText(`Cena: 🪙 ${item.cost}`, itemX + cardWidth / 2, cardY + 95);
+            ctx.fillStyle = "#ffffff"; ctx.font = "bold 12px sans-serif"; ctx.textAlign = "center";
+            ctx.fillText(item.name, itemX + cardWidth / 2, cardY + 24);
+            ctx.font = "32px sans-serif"; ctx.fillText(item.icon, itemX + cardWidth / 2, cardY + 66);
+            ctx.font = "bold 13px sans-serif"; ctx.fillStyle = coins >= item.cost ? "#f59e0b" : "#ef4444";
+            ctx.fillText(`Cena: 🪙 ${item.cost}`, itemX + cardWidth / 2, cardY + 100);
         });
 
-        let nextBtnW = 240; let nextBtnH = 38; let nextBtnX = canvas.width / 2 - nextBtnW / 2; let nextBtnY = cardY + cardHeight + 20;
-        ctx.fillStyle = "#2ecc71"; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(nextBtnX, nextBtnY, nextBtnW, nextBtnH, 6) : ctx.fillRect(nextBtnX, nextBtnY, nextBtnW, nextBtnH); ctx.fill();
-        ctx.fillStyle = "#ffffff"; ctx.font = "bold 13px sans-serif"; ctx.textAlign = "center";
-        ctx.fillText("Vstoupit na novou kru [Mezerník] ➔", canvas.width / 2, nextBtnY + 24);
+        let nextBtnW = 250; let nextBtnH = 40; let nextBtnX = canvas.width / 2 - nextBtnW / 2; let nextBtnY = cardY + cardHeight + 25;
+        ctx.fillStyle = "#10b981"; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(nextBtnX, nextBtnY, nextBtnW, nextBtnH, 6) : ctx.fillRect(nextBtnX, nextBtnY, nextBtnW, nextBtnH); ctx.fill();
+        ctx.fillStyle = "#ffffff"; ctx.font = "bold 14px sans-serif"; ctx.textAlign = "center";
+        ctx.fillText("Vstoupit na novou kru [Mezerník] ➔", canvas.width / 2, nextBtnY + 25);
 
-        let quitBtnW = 240; let quitBtnH = 38; let quitBtnX = canvas.width / 2 - quitBtnW / 2; let quitBtnY = nextBtnY + nextBtnH + 12;
-        ctx.fillStyle = "#e74c3c"; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(quitBtnX, quitBtnY, quitBtnW, quitBtnH, 6) : ctx.fillRect(quitBtnX, quitBtnY, quitBtnW, quitBtnH); ctx.fill();
-        ctx.fillStyle = "#ffffff"; ctx.fillText("Opustit hru [Esc]", canvas.width / 2, quitBtnY + 24);
+        let quitBtnW = 250; let quitBtnH = 40; let quitBtnX = canvas.width / 2 - quitBtnW / 2; let quitBtnY = nextBtnY + nextBtnH + 12;
+        ctx.fillStyle = "#ef4444"; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(quitBtnX, quitBtnY, quitBtnW, quitBtnH, 6) : ctx.fillRect(quitBtnX, quitBtnY, quitBtnW, quitBtnH); ctx.fill();
+        ctx.fillStyle = "#ffffff"; ctx.fillText("Opustit hru [Esc]", canvas.width / 2, quitBtnY + 25);
         return;
     }
 
-    // --- MAGICKÁ POLÁRNÍ ZÁŘE NEBO KLASICKÁ SCÉNA ---
+    // --- DYNAMICKÁ POLÁRNÍ ZÁŘE ---
     if (upgrades.aurora) {
+        // Základní tmavá noční obloha
         let skyGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
-        skyGrad.addColorStop(0, "#080f1d");
-        skyGrad.addColorStop(0.25, "#0b3c26"); // Neonově zelená aura vlnění
-        skyGrad.addColorStop(0.45, "#2a085c"); // Purpurový podtón
-        skyGrad.addColorStop(1, "#1a365d");
+        skyGrad.addColorStop(0, "#060b14");
+        skyGrad.addColorStop(0.6, "#0b1528");
+        skyGrad.addColorStop(1, "#1e293b");
         ctx.fillStyle = skyGrad;
-    } else {
-        ctx.fillStyle = "#1a365d";
-    }
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    ctx.fillStyle = "rgba(42, 67, 101, 0.75)";
+        // Vlnění polární záře (Screen blending)
+        ctx.save();
+        ctx.globalCompositeOperation = "screen";
+        let time = Date.now() * 0.0012;
+
+        // Vlna 1: Jasně zelená / smaragdová
+        ctx.fillStyle = "rgba(16, 185, 129, 0.22)";
+        ctx.beginPath(); ctx.moveTo(0, 0);
+        for (let x = 0; x <= canvas.width; x += 15) {
+            let y = 45 + Math.sin(x * 0.008 + time) * 22 + Math.cos(x * 0.004 + time * 0.6) * 12;
+            ctx.lineTo(x, y + 65);
+        }
+        ctx.lineTo(canvas.width, 0); ctx.closePath(); ctx.fill();
+
+        // Vlna 2: Tyrkysová / azurová podpora
+        ctx.fillStyle = "rgba(6, 182, 212, 0.16)";
+        ctx.beginPath(); ctx.moveTo(0, 0);
+        for (let x = 0; x <= canvas.width; x += 15) {
+            let y = 60 + Math.sin(x * 0.012 - time * 0.8) * 28;
+            ctx.lineTo(x, y + 75);
+        }
+        ctx.lineTo(canvas.width, 0); ctx.closePath(); ctx.fill();
+
+        // Vlna 3: Magická purpurová hloubka
+        ctx.fillStyle = "rgba(139, 92, 246, 0.14)";
+        ctx.beginPath(); ctx.moveTo(0, 0);
+        for (let x = 0; x <= canvas.width; x += 15) {
+            let y = 35 + Math.cos(x * 0.006 + time * 1.3) * 18;
+            ctx.lineTo(x, y + 55);
+        }
+        ctx.lineTo(canvas.width, 0); ctx.closePath(); ctx.fill();
+
+        ctx.restore();
+    } else {
+        ctx.fillStyle = "#1e3a8a";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    // Horní lišta HUDu
+    ctx.fillStyle = "rgba(15, 23, 42, 0.65)";
     ctx.fillRect(0, 0, canvas.width, 60);
 
     let centerX = PLAYER_X_BASE;
@@ -697,71 +737,101 @@ function gameRenderLoop() {
         drawPlayer(PLAYER_X_BASE, PLAYER_Y_BASE + bobbing);
     }
 
-    // VYKRESLENÍ GRAFICKÉHO EFEKTU UZDRAVENÍ (PLOUZNUTÍ TEXTU S ALPHOU)
+    // VYKRESLENÍ GRAFICKÉHO EFEKTU UZDRAVENÍ
     if (healEffectTimer > 0) {
         healEffectTimer--;
         ctx.save();
-        ctx.fillStyle = "#2ecc71"; ctx.font = "bold 15px sans-serif"; ctx.textAlign = "center";
+        ctx.fillStyle = "#10b981"; ctx.font = "bold 15px sans-serif"; ctx.textAlign = "center";
         ctx.shadowColor = "#000000"; ctx.shadowBlur = 4;
         let alpha = Math.min(1, healEffectTimer / 30);
         ctx.globalAlpha = alpha;
         let floatY = (90 - healEffectTimer) * 0.4;
-        ctx.fillText("💚 +1 ŽIVOT (Mrazivé vyléčení!) 💚", PLAYER_X_BASE, PLAYER_Y_BASE - 50 - floatY);
+        ctx.fillText("💚 +1 ŽIVOT (Mrazivé vyléčení!) 💚", PLAYER_X_BASE, PLAYER_Y_BASE - 65 - floatY);
         ctx.restore();
     }
 
-    // --- HUD TEXTY ---
-    ctx.font = "bold 13px sans-serif"; ctx.textAlign = "left"; ctx.fillStyle = "#f1c40f";
+    // --- HUD TEXTY (S LEPŠÍM STÍNEM PRO ČITELNOST NA SNĚHU) ---
+    ctx.save();
+    ctx.shadowColor = "rgba(0,0,0,0.5)"; ctx.shadowBlur = 3;
+    ctx.font = "bold 14px sans-serif"; ctx.textAlign = "left"; ctx.fillStyle = "#f59e0b";
     ctx.fillText(`🪙 Mince: ${coins}`, 15, 25);
-    ctx.fillStyle = "#ffffff"; ctx.fillText(`Kolo: ${roundNumber}`, 115, 25); ctx.fillText(`Skóre: ${score} b.`, 115, 45);
+    ctx.fillStyle = "#ffffff"; ctx.fillText(`Kolo: ${roundNumber}`, 125, 25); ctx.fillText(`Skóre: ${score} b.`, 125, 45);
 
-    ctx.fillStyle = "#cbd5e1"; ctx.font = "bold 12px sans-serif"; ctx.textAlign = "right"; 
+    ctx.fillStyle = "#e2e8f0"; ctx.font = "bold 12px sans-serif"; ctx.textAlign = "right"; 
     const flagMap = { 'cs-CZ': '🇨🇿 CZ', 'en-US': '🇺🇸 EN', 'de-DE': '🇩🇪 DE', 'fr-FR': '🇫🇷 FR', 'es-ES': '🇪🇸 ES', 'fi-FI': '🇫🇮 FI' };
-    ctx.fillText(`🎧 ${flagMap[langA] || langA}  ➔  🗣️ ${flagMap[langB] || langB}`, canvas.width - 15, 65); 
+    ctx.fillText(`🎧 ${flagMap[langA] || langA}  ➔  🗣️ ${flagMap[langB] || langB}`, canvas.width - 15, 68); 
 
-    ctx.fillStyle = "#ffffff"; ctx.textAlign = "right";
+    ctx.fillStyle = "#ffffff"; ctx.textAlign = "right"; ctx.font = "bold 14px sans-serif";
     let hearts = lives > 0 ? "❤️".repeat(lives) + "🖤".repeat(maxLives - lives) : "💀 UTOPEN";
     ctx.fillText(`Stabilita kry: ${hearts}`, canvas.width - 15, 25);
 
+    ctx.font = "12px sans-serif"; ctx.fillStyle = "#cbd5e1";
     let currentLimit = roundNumber > 18 ? 999 : roundNumber > 15 ? 500 : roundNumber > 12 ? 250 : roundNumber > 9 ? 100 : roundNumber > 6 ? 50 : roundNumber > 3 ? 20 : 10;
     ctx.fillText(`Rozsah čísel: 1 - ${currentLimit}`, canvas.width - 15, 45);
+    ctx.restore();
 }
 
 // --- POMOCNÉ VYKRESLOVACÍ FUNKCE ---
 function drawFloeIce(cracks) {
-    ctx.fillStyle = "#e2e8f0"; ctx.strokeStyle = "#90cdf4"; ctx.lineWidth = 4;
+    ctx.fillStyle = "#f8fafc"; ctx.strokeStyle = "#bae6fd"; ctx.lineWidth = 4;
     ctx.beginPath(); ctx.moveTo(-110, -40); ctx.lineTo(100, -45); ctx.lineTo(140, 40); ctx.lineTo(-130, 50); ctx.closePath();
     ctx.fill(); ctx.stroke();
 
     // PROGRESIVNÍ PRASKÁNÍ (AŽ DO 5 FÁZÍ)
-    ctx.strokeStyle = "#2d3748";
+    ctx.strokeStyle = "#334155";
     if (cracks >= 1) { ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(-60, -30); ctx.lineTo(-20, 10); ctx.lineTo(-40, 45); ctx.stroke(); }
     if (cracks >= 2) { ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(80, -35); ctx.lineTo(30, -5); ctx.lineTo(50, 40); ctx.stroke(); ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-20, 10); ctx.lineTo(30, -5); ctx.stroke(); }
     if (cracks >= 3) { ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(0, -42); ctx.lineTo(-10, -15); ctx.lineTo(15, 5); ctx.stroke(); }
-    if (cracks >= 4) { ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-115, 10); ctx.lineTo(-70, 15); ctx.lineTo(-40, 45); ctx.stroke(); }
+    if (cracks >= 4) { ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-115, 10); ctx.lineTo(-70, 15); ctx.lineTo(-40, 45); stroke(); }
     if (cracks >= 5) { ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(120, 10); ctx.lineTo(70, 20); ctx.lineTo(30, -5); ctx.stroke(); }
 
     // DOKOUPENÉ OKRASY PROSTŘEDÍ NA KŘE
     if (upgrades.snowman) {
-        ctx.save(); ctx.translate(-75, 5);
-        ctx.fillStyle = "#ffffff"; ctx.shadowColor = "rgba(0,0,0,0.1)"; ctx.shadowBlur = 2;
-        ctx.beginPath(); ctx.arc(0, 10, 12, 0, Math.PI * 2); ctx.fill(); // Spodek
-        ctx.beginPath(); ctx.arc(0, -4, 9, 0, Math.PI * 2); ctx.fill();  // Střed
-        ctx.beginPath(); ctx.arc(0, -15, 6, 0, Math.PI * 2); ctx.fill(); // Hlava
-        ctx.fillStyle = "#ed8936"; ctx.beginPath(); ctx.moveTo(0, -15); ctx.lineTo(-7, -14); ctx.lineTo(0, -13); ctx.fill(); // Nos
+        ctx.save(); ctx.translate(-75, 0);
+        ctx.fillStyle = "#ffffff"; ctx.strokeStyle = "#e2e8f0"; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.arc(0, 15, 14, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); // Spodek
+        ctx.beginPath(); ctx.arc(0, -1, 10, 0, Math.PI * 2); ctx.fill(); ctx.stroke();  // Střed
+        ctx.beginPath(); ctx.arc(0, -13, 7, 0, Math.PI * 2); ctx.fill(); ctx.stroke();  // Hlava
+        // Uhlíky (oči) a mrkev
+        ctx.fillStyle = "#000000"; ctx.beginPath(); ctx.arc(-2, -14, 1, 0, Math.PI * 2); ctx.arc(2, -14, 1, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "#f97316"; ctx.beginPath(); ctx.moveTo(0, -13); ctx.lineTo(-8, -12); ctx.lineTo(0, -11); ctx.fill();
         ctx.restore();
     }
+    
+    // ZVĚTŠENÉ A PROPRACIVANÉ POLÁRNÍ IGLÚ
     if (upgrades.igloo) {
-        ctx.save(); ctx.translate(75, 15);
-        ctx.fillStyle = "#edf2f7"; ctx.strokeStyle = "#cbd5e1"; ctx.lineWidth = 1.5;
-        ctx.beginPath(); ctx.arc(0, 10, 20, Math.PI, 0); ctx.fill(); ctx.stroke();
-        ctx.fillStyle = "#4a5568"; ctx.beginPath(); ctx.arc(0, 10, 7, Math.PI, 0); ctx.fill(); // Vchod
+        ctx.save(); ctx.translate(75, 5); // Pozice na pravé straně kry
+        ctx.fillStyle = "#f1f5f9"; ctx.strokeStyle = "#cbd5e1"; ctx.lineWidth = 2;
+        
+        // Hlavní velká kopule iglú
+        ctx.beginPath(); ctx.arc(0, 20, 32, Math.PI, 0); ctx.fill(); ctx.stroke();
+        
+        // Vodorovné linie ledových cihel
+        ctx.beginPath(); ctx.arc(0, 20, 22, Math.PI, 0); ctx.stroke();
+        ctx.beginPath(); ctx.arc(0, 20, 11, Math.PI, 0); ctx.stroke();
+        
+        // Svislé zářezy cihel (3D efekt struktury)
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(-22, 4); ctx.lineTo(-32, 20); ctx.moveTo(22, 4); ctx.lineTo(32, 20);
+        ctx.moveTo(-11, 11); ctx.lineTo(-15, 4); ctx.moveTo(11, 11); ctx.lineTo(15, 4);
+        ctx.moveTo(0, 9); ctx.lineTo(0, -2);
+        ctx.stroke();
+
+        // 3D Vstupní tunel (předsíň iglú)
+        ctx.fillStyle = "#e2e8f0"; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(-14, 20, 14, Math.PI, 0); ctx.fill(); ctx.stroke();
+        
+        // Temný vnitřek vchodu (stín uvnitř)
+        ctx.fillStyle = "#0f172a";
+        ctx.beginPath(); ctx.arc(-14, 20, 9, Math.PI, 0); ctx.fill();
+        
         ctx.restore();
     }
 }
 
 function drawFloeSignpost(floeIdx) {
-    ctx.save(); ctx.translate(55, -20); ctx.fillStyle = "#795548"; ctx.fillRect(-3, 0, 6, 22);
+    ctx.save(); ctx.translate(55, -20); ctx.fillStyle = "#7c2d12"; ctx.fillRect(-3, 0, 6, 22);
     ctx.fillStyle = "#ffffff"; ctx.strokeStyle = "#334155"; ctx.lineWidth = 2;
     ctx.beginPath(); if (ctx.roundRect) { ctx.roundRect(-32, -18, 64, 18, 4); } else { ctx.fillRect(-32, -18, 64, 18); }
     ctx.fill(); ctx.stroke();
@@ -771,47 +841,54 @@ function drawFloeSignpost(floeIdx) {
 
 function drawPlayer(pX, pY) {
     if (gameState === 'game_over' || lives <= 0) {
-        ctx.fillStyle = "#3182ce"; ctx.beginPath(); ctx.arc(PLAYER_X_BASE, PLAYER_Y_BASE + 25, 25, 0, Math.PI, true); ctx.fill();
+        ctx.fillStyle = "#3b82f6"; ctx.beginPath(); ctx.arc(PLAYER_X_BASE, PLAYER_Y_BASE + 25, 25, 0, Math.PI, true); ctx.fill();
         ctx.fillStyle = "#ffffff"; ctx.font = "bold 14px sans-serif"; ctx.textAlign = "center"; ctx.fillText("SPLOUCH!", PLAYER_X_BASE, PLAYER_Y_BASE + 15);
         return;
     }
-    // Tělo panáčka
-    ctx.fillStyle = "#e53e3e"; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(pX - 12, pY - 5, 24, 26, 6) : ctx.fillRect(pX - 12, pY - 5, 24, 26); ctx.fill();
+
+    // 1. Tělo panáčka (Bunda)
+    ctx.fillStyle = "#ef4444"; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(pX - 12, pY - 5, 24, 26, 6) : ctx.fillRect(pX - 12, pY - 5, 24, 26); ctx.fill();
     
-    // DETAILNĚJŠÍ STYLING PŘEDMĚTŮ V INVENTÁŘI
+    // 2. Vylepšení oblečení (překrývá tělo)
     if (upgrades.boots) { 
-        ctx.fillStyle = "#2d3748"; ctx.fillRect(pX - 13, pY + 18, 9, 5); ctx.fillRect(pX + 4, pY + 18, 9, 5); 
-        ctx.fillStyle = "#4a5568"; ctx.fillRect(pX - 13, pY + 18, 6, 2); ctx.fillRect(pX + 4, pY + 18, 6, 2); 
+        ctx.fillStyle = "#1e293b"; ctx.fillRect(pX - 13, pY + 18, 9, 5); ctx.fillRect(pX + 4, pY + 18, 9, 5); 
+        ctx.fillStyle = "#475569"; ctx.fillRect(pX - 13, pY + 18, 6, 2); ctx.fillRect(pX + 4, pY + 18, 6, 2); 
     }
     if (upgrades.gloves) { 
-        ctx.fillStyle = "#1a202c"; ctx.beginPath(); ctx.arc(pX - 15, pY + 10, 4.5, 0, Math.PI * 2); ctx.arc(pX + 15, pY + 10, 4.5, 0, Math.PI * 2); ctx.fill(); 
+        ctx.fillStyle = "#0f172a"; ctx.beginPath(); ctx.arc(pX - 15, pY + 10, 4.5, 0, Math.PI * 2); ctx.arc(pX + 15, pY + 10, 4.5, 0, Math.PI * 2); ctx.fill(); 
     }
     if (upgrades.coat) { 
-        ctx.fillStyle = "#2b6cb0"; ctx.fillRect(pX - 13, pY + 2, 26, 16); 
-        ctx.fillStyle = "#1a365d"; ctx.fillRect(pX - 2, pY + 2, 4, 16); // Zip kabátu
+        ctx.fillStyle = "#2563eb"; ctx.fillRect(pX - 13, pY + 2, 26, 16); 
+        ctx.fillStyle = "#1d4ed8"; ctx.fillRect(pX - 2, pY + 2, 4, 16); 
     }
     if (upgrades.scarf) { 
-        ctx.fillStyle = "#31bafc"; ctx.fillRect(pX - 11, pY - 2, 22, 5); 
-        ctx.fillStyle = "#1d8cf8"; ctx.fillRect(pX + 4, pY + 3, 5, 12); 
+        ctx.fillStyle = "#06b6d4"; ctx.fillRect(pX - 11, pY - 2, 22, 5); 
+        ctx.fillStyle = "#0891b2"; ctx.fillRect(pX + 4, pY + 3, 5, 12); 
     }
     
-    // Zimní čepice s propracovaným lemem a barevnou bambulí
+    // 3. Vždy vykreslit hlavu (aby pod čepicí nebylo prázdno)
+    ctx.fillStyle = "#fef08a"; ctx.beginPath(); ctx.arc(pX, pY - 13, 8.5, 0, Math.PI * 2); ctx.fill(); 
+    
+    // 4. Oči (kreslí se bezpečně na hlavu, čepice je nezatlačí dolů)
+    ctx.fillStyle = "#0f172a"; 
+    ctx.fillRect(pX - 4, pY - 15, 2, 3.5); 
+    ctx.fillRect(pX + 2, pY - 15, 2, 3.5);
+    
+    // 5. Zimní čepice (pokud je koupená, sedí perfektně NA HLAVĚ a nezasahuje do očí)
     if (upgrades.hat) { 
-        ctx.fillStyle = "#3182ce"; ctx.beginPath(); ctx.arc(pX, pY - 11, 8, Math.PI, 0); ctx.fill(); 
-        ctx.fillStyle = "#ffffff"; ctx.fillRect(pX - 10, pY - 12, 20, 4); // Lem čepice
-        ctx.fillStyle = "#e53e3e"; ctx.beginPath(); ctx.arc(pX, pY - 20, 3.5, 0, Math.PI * 2); ctx.fill(); // Bambule
-    } else { 
-        ctx.fillStyle = "#ffeb3b"; ctx.beginPath(); ctx.arc(pX, pY - 12, 8, 0, Math.PI * 2); ctx.fill(); 
+        // Kupole čepice posunuta výš nad oči
+        ctx.fillStyle = "#3b82f6"; ctx.beginPath(); ctx.arc(pX, pY - 14, 8.5, Math.PI, 0); ctx.fill(); 
+        // Bílý teplý lem čepice nad očima
+        ctx.fillStyle = "#ffffff"; ctx.fillRect(pX - 10, pY - 16, 20, 4.5); 
+        // Barevná bambule nahoře
+        ctx.fillStyle = "#ef4444"; ctx.beginPath(); ctx.arc(pX, pY - 24, 4, 0, Math.PI * 2); ctx.fill(); 
     }
     
-    // Oči
-    ctx.fillStyle = "#000000"; ctx.fillRect(pX - 4, pY - 15, 2, 3); ctx.fillRect(pX + 2, pY - 15, 2, 3);
-
-    // Vykreslení aktivního mazlíčka (Hopsajícího tučňáka)
+    // 6. Aktivní mazlíček (Hopsající tučňák)
     if (upgrades.pet) {
         let petBob = Math.sin(Date.now() * 0.006) * 2;
-        ctx.fillStyle = "#1a202c"; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(pX + 22, pY + 5 + petBob, 14, 16, 4) : ctx.fillRect(pX + 22, pY + 5 + petBob, 14, 16); ctx.fill();
+        ctx.fillStyle = "#0f172a"; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(pX + 22, pY + 5 + petBob, 14, 16, 4) : ctx.fillRect(pX + 22, pY + 5 + petBob, 14, 16); ctx.fill();
         ctx.fillStyle = "#ffffff"; ctx.fillRect(pX + 25, pY + 9 + petBob, 8, 9);
-        ctx.fillStyle = "#ed8936"; ctx.fillRect(pX + 34, pY + 10 + petBob, 4, 3);
+        ctx.fillStyle = "#f97316"; ctx.fillRect(pX + 34, pY + 10 + petBob, 4, 3);
     }
 }

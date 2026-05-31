@@ -124,6 +124,11 @@ if (onlineModeSelect) {
 const soloStartBtn = document.getElementById('solo-start-game-btn');
 if (soloStartBtn) {
     soloStartBtn.addEventListener('click', () => {
+        // Uživatelské gesto pro odblokování audia
+        if (window.speechSynthesis) {
+            window.speechSynthesis.speak(new SpeechSynthesisUtterance(''));
+        }
+
         gameMode = 'solo'; myRole = 'p1';
         currentModeType = document.getElementById('game-mode-type-solo').value;
         langA = document.getElementById('lang-select-solo-a').value;
@@ -149,6 +154,11 @@ if (soloStartBtn) {
 const createRoomBtn = document.getElementById('create-room-execute-btn');
 if (createRoomBtn) {
     createRoomBtn.addEventListener('click', async () => {
+        // Uživatelské gesto pro odblokování audia
+        if (window.speechSynthesis) {
+            window.speechSynthesis.speak(new SpeechSynthesisUtterance(''));
+        }
+
         const code = Math.floor(1000 + Math.random() * 9000).toString();
         gameMode = 'online'; 
         myRole = 'p1'; // Zakladatel je vždy p1
@@ -183,6 +193,11 @@ if (createRoomBtn) {
 const joinRoomBtn = document.getElementById('join-room-execute-btn');
 if (joinRoomBtn) {
     joinRoomBtn.addEventListener('click', async () => {
+        // Uživatelské gesto pro odblokování audia
+        if (window.speechSynthesis) {
+            window.speechSynthesis.speak(new SpeechSynthesisUtterance(''));
+        }
+
         const code = document.getElementById('room-code-input').value.trim().toUpperCase();
         if(!code) return alert("Zadej kód místnosti!");
 
@@ -279,6 +294,11 @@ function renderHUD() {
 
 if (startMatchBtn) {
     startMatchBtn.addEventListener('click', () => {
+        // Uživatelské gesto pro odblokování audia
+        if (window.speechSynthesis) {
+            window.speechSynthesis.speak(new SpeechSynthesisUtterance(''));
+        }
+
         if (gameMode === 'solo') {
             executeStart(false);
         } else if (gameMode === 'online' && myRole === 'p1') {
@@ -497,14 +517,28 @@ if (SpeechRecognition) {
 
 function speakTargetNumber(num, lang, forceCancel = false) {
     if (!window.speechSynthesis || currentModeType !== 'translation') return;
-    if (forceCancel) window.speechSynthesis.cancel();
-    else if (window.speechSynthesis.speaking) return; 
 
     let textToSpeak = (num <= 10 && languageWordsText[lang]) ? languageWordsText[lang][num] : num.toString();
     const utterance = new SpeechSynthesisUtterance(textToSpeak);
     utterance.lang = lang;
     utterance.rate = 0.9; 
-    window.speechSynthesis.speak(utterance);
+
+    if (forceCancel) {
+        const wasSpeaking = window.speechSynthesis.speaking;
+        if (wasSpeaking) {
+            window.speechSynthesis.cancel();
+        }
+        
+        // OPRAVA: Pokud nic nehrálo (první číslo), nevoláme stornování.
+        // Dáme prohlížeči 250ms okno na rozdýchání po zapnutí mikrofonu.
+        const delay = wasSpeaking ? 50 : 250;
+        setTimeout(() => {
+            window.speechSynthesis.speak(utterance);
+        }, delay);
+    } else {
+        if (window.speechSynthesis.speaking) return;
+        window.speechSynthesis.speak(utterance);
+    }
 }
 
 if (repeatBtn) {
