@@ -4,23 +4,23 @@ import { updateCreditsUI } from './credit-system.js';
 import './auth.js';
 import './menu.js';
 import './game1-run.js';
-import './game2-pexeso.js'; // Odkomentuj po přidání souboru
+import './game2-pexeso.js'; 
+import './game3-junglerun.js'; // 👈 1. PŘIDÁNO: Importování nové hry do bundlu
 
 export let globalGameState = {
     currentLanguage: 'cs',
     isUserLogged: false
 };
 
-// Funkce pro bezpečné přepínání obrazovek (Nyní v globálním okně)
 export function changeScreen(screenId) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     const target = document.getElementById(screenId);
-    if (target) target.classList.add('active');
+    if (target) target.add('active');
     
-    // Specifické chování pro herní canvas / profilovou zónu
     const profileBox = document.getElementById('global-profile-box');
     if (profileBox) {
-        if (['screen-game', 'screen-victory', 'screen-game2-play'].includes(screenId)) {
+        // 👈 2. UPRAVENO: Přidána ID obrazovka Hry 3, aby se schoval profilový box během běhu
+        if (['screen-game', 'screen-victory', 'screen-game2-play', 'screen-game3-play'].includes(screenId)) {
             profileBox.style.display = 'none';
         } else {
             profileBox.style.display = 'block';

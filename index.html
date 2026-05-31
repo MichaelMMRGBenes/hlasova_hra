@@ -52,9 +52,10 @@
                 <p data-i18n="game2Desc">Poslouchej sekvence krychlí ledu a opakuj.</p>
                 <button id="menu-choose-game2" data-i18n="playBtn">Hrát</button>
             </div>
-            <div class="game-card locked">
-                <h3>3. Již brzy...</h3>
-                <button disabled>🔒</button>
+            <div class="game-card">
+                <h3 data-i18n="game3Name">3. Útěk před pumou</h3>
+                <p data-i18n="game3Desc">Běž pralesem a překládej slova v reálném čase, abys utekl hladové šelmě.</p>
+                <button id="menu-choose-game3" data-i18n="playBtn">Hrát</button>
             </div>
             <div class="game-card locked">
                 <h3>4. Již brzy...</h3>
@@ -266,6 +267,15 @@
         <canvas id="game2-canvas" width="1000" height="320" style="border:2px solid #cbd5e0; background:#1a365d; display:block; max-width:100%; margin: 0 auto 15px auto;"></canvas>
         <button id="game2-quit-btn" class="btn-danger" data-i18n="quitGame">Ukončit pexeso</button>
     </div>
+    <div id="screen-game3-play" class="screen">
+    <div id="game3-audio-prompt" style="text-align: center; color: #2ecc71; margin-bottom: 10px; font-weight: bold;">
+        🎤 Hlasové ovládání aktivní. Mluvte pro překlad!
+    </div>
+    <canvas id="game3-canvas" width="1024" height="576" style="display: block; margin: 0 auto; max-width: 100%; border: 4px solid #1b3d22; background: #050f08;"></canvas>
+    <button id="game3-quit-btn" class="btn-danger" style="display: block; margin: 15px auto 0 auto; padding: 10px 20px;">
+        Ukončit hru
+    </div>
+</div>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>

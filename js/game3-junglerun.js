@@ -1,8 +1,9 @@
-/**
- * JUNGLE SPEECH RUN - CORE ARCHITECTURE (BACKEND & VOICE)
- * Část 1/2: Správa stavu, slovní zásoby a Web Speech API
- */
+import { changeScreen } from './app.js';
 
+import { consumeCredit } from './credit-system.js'; 
+
+
+let animationFrameId = null;
 // --- 1. GLOBÁLNÍ STAV HRY ---
 const gameEngine = {
     // Nastavení konfigurace
@@ -55,7 +56,7 @@ const VOCABULARY_DATABASE = [
     // --- KATEGORIE: ZVÍŘATA (ANIMALS / ELÄIMET / TIERE) ---
     { id: 1, category: 'animals', level: 'basic', text: { 'cs-CZ': 'pes', 'en-US': 'dog', 'fi-FI': 'koira', 'de-DE': 'Hund' } },
     { id: 2, category: 'animals', level: 'basic', text: { 'cs-CZ': 'kočka', 'en-US': 'cat', 'fi-FI': 'kissa', 'de-DE': 'Katze' } },
-    { id: 3, category: 'animals', level: 'intermediate', text: { 'cs-CZ': 'tygr', 'en-US': 'tiger', 'fi-FI': 'tiokeri', 'de-DE': 'Tiger' } },
+    { id: 3, category: 'animals', level: 'intermediate', text: { 'cs-CZ': 'tygr', 'en-US': 'tiger', 'fi-FI': 'tiikeri', 'de-DE': 'Tiger' } },
     { id: 4, category: 'animals', level: 'intermediate', text: { 'cs-CZ': 'had', 'en-US': 'snake', 'fi-FI': 'käärme', 'de-DE': 'Schlange' } },
     { id: 5, category: 'animals', level: 'expert', text: { 'cs-CZ': 'veverka', 'en-US': 'squirrel', 'fi-FI': 'orava', 'de-DE': 'Eichhörnchen' } },
     { id: 6, category: 'animals', level: 'expert', text: { 'cs-CZ': 'vlk', 'en-US': 'wolf', 'fi-FI': 'susi', 'de-DE': 'Wolf' } },
@@ -153,6 +154,12 @@ function generateNextGateChallenge() {
         if (gameEngine.vocab.activePool.length === 0) {
             gameEngine.vocab.activePool = [...BASE_CORE_WORDS];
         }
+        environment.gateX = canvas.width + 100;
+        environment.gateEvaluated = false;
+
+        // Náhodně promíchat pořadí bran pro Canvas lajny
+        gates.sort(() => 0.5 - Math.random());
+        gameEngine.activeGates = gates;
     }
 
     // Vyber náhodné slovo jako hlavní výzvu
@@ -455,9 +462,62 @@ class SpeechRecognitionCore {
 
 // Inicializace globálního hlasového jádra
 const speechCore = new SpeechRecognitionCore();
-const canvas = document.getElementById('gameCanvas');
+const canvas = document.getElementById('game3-canvas');
 const ctx = canvas.getContext('2d');
+// --- INICIALIZACE PO NAČTENÍ DOM (Samo-řídící blok hry) ---
+document.addEventListener('DOMContentLoaded', () => {
+    const startBtn = document.getElementById('menu-choose-game3');
+    const quitBtn = document.getElementById('game3-quit-btn');
 
+    // 1. Ošetření startu z hlavního menu
+    if (startBtn) {
+        startBtn.addEventListener('click', () => {
+            // PŘÍKLAD KREDITŮ: Pokud chceš, aby hra stála kredit, odkomentuj:
+            // if (!consumeCredit()) return; 
+
+            // Přepnutí obrazovky do herního režimu
+            changeScreen('screen-game3-play');
+
+            // Detekce aktuálně zvoleného UI jazyka pro nastavení herních dvojic
+            const globalLang = document.getElementById('global-lang-selector')?.value || 'cs';
+            
+            let langA = 'cs-CZ'; // Zadání je v češtině
+            let langB = 'en-US'; // Výchozí překlad do AJ
+            
+            if (globalLang === 'fi') {
+                langB = 'fi-FI'; // Pokud má přepnuto na Suomi, překládá se do finštiny
+            }
+
+            // Spuštění inicializace z Části 1
+            initGameSession(langA, langB, 'intermediate', 'basic');
+            
+            // Aktivace mikrofonu
+            speechCore.startListening();
+            
+            // Nastartování herní smyčky loopu
+            lastTime = performance.now();
+            runGameLoop();
+        });
+    }
+
+    // 2. Ošetření odchodu ze hry (Tlačítko Ukončit hru)
+    if (quitBtn) {
+        quitBtn.addEventListener('click', () => {
+            // Zastavení cyklu překreslování (šetří procesor)
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+            }
+            
+            // Vypnutí mikrofonu, aby ikona nahrávání nezůstala v prohlížeči svítit
+            if (typeof speechCore !== 'undefined' && speechCore.stopListening) {
+                speechCore.stopListening();
+            }
+            
+            // Návrat do hlavního rozbočovače
+            changeScreen('screen-main');
+        });
+    }
+});
 // Paralaxní vrstvy pozadí (offsety pro rolování)
 const environment = {
     skyOffset: 0,
@@ -980,9 +1040,13 @@ function drawGameOver() {
 }
 
 // --- 6. HLAVNÍ SMYČKA REFRESHOVÁNÍ (GAMELOOP) ---
+// --- 6. HLAVNÍ SMYČKA REFRESHOVÁNÍ (GAMELOOP) ---
 let lastTime = performance.now();
 
-function gameLoop(currentTime) {
+function runGameLoop(currentTime) {
+    // Bezpečné ošetření prvního snímku, pokud by prohlížeč neposlal currentTime včas
+    if (!currentTime) currentTime = performance.now();
+
     // Výpočet delta času (v sekundách) pro plynulost nezávislou na FPS
     let deltaTime = (currentTime - lastTime) / 1000;
     lastTime = currentTime;
@@ -1033,20 +1097,17 @@ function gameLoop(currentTime) {
     }
 
     ctx.restore();
-    requestAnimationFrame(gameLoop);
+    // 👈 OPRAVENO: Správné volání rekurze na správný název funkce
+    requestAnimationFrame(runGameLoop); 
 }
 
 // --- 7. OBSLUHA KLIKNUTÍ A ASYNCHRONNÍHO STARTU ---
 canvas.addEventListener('click', (e) => {
     if (gameEngine.state === 'menu' || gameEngine.state === 'game_over') {
-        // Spustíme asynchronní naslouchání (vyžaduje interakci uživatele s doménou)
         speechCore.startListening();
-        
-        // Inicializace hry: Zde si můžeš upravit startovní parametry
-        // cs-CZ (Vstup) -> en-US (Překládáš do angličtiny), obtížnost, pokročilost
         initGameSession('cs-CZ', 'en-US', 'intermediate', 'basic');
     }
 });
 
-// Spuštění grafické smyčky
-requestAnimationFrame(gameLoop);
+// Spuštění grafické smyčky (👈 OPRAVENO na runGameLoop)
+requestAnimationFrame(runGameLoop);
