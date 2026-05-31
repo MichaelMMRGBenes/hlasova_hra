@@ -36,7 +36,7 @@ let roundNumber = 1;
 
 let visualCracks = 0; 
 let coins = 12; 
-let upgrades = { scarf: false, gloves: false, hat: false };
+let upgrades = { scarf: false, gloves: false, hat: false, boots: false, coat: false, pet: false };
 let topScores = [];
 let jumpAnimationProgress = 0;
 
@@ -147,6 +147,41 @@ function populateLanguageSelects() {
     });
 }
 
+// --- LOGIKA POMOCNÉHO FILTROVÁNÍ OBCHODU ---
+function getAvailableShopItems() {
+    const allItems = [
+        { id: 'scarf', name: 'Hřejivá šála (+1 ❤️ MAX)', cost: 5, icon: '🧣' },
+        { id: 'gloves', name: 'Rukavice (+1 ❤️ MAX)', cost: 5, icon: '🧤' },
+        { id: 'hat', name: 'Zimní čepice (+1 ❤️ MAX)', cost: 10, icon: '🧢' },
+        { id: 'boots', name: 'Zimní boty (+1 ❤️ MAX)', cost: 8, icon: '🥾' },
+        { id: 'coat', name: 'Teplý kabát (+2 ❤️ MAX)', cost: 15, icon: '🧥' }
+    ];
+
+    let available = allItems.filter(item => !upgrades[item.id]);
+
+    // Pokud má kompletní základní oblečení, nabídni mazlíčka
+    if (upgrades.scarf && upgrades.gloves && upgrades.hat) {
+        if (!upgrades.pet) {
+            available.push({ id: 'pet', name: 'Mazlíček tučňák (Nápověda)', cost: 25, icon: '🐧' });
+        }
+    }
+
+    return available.slice(0, 3);
+}
+
+// Bezpečná pauza s odpočtem po nákupu
+function exitShopToNewRound() {
+    gameState = 'setup';
+    const statusEl = document.getElementById('game2-status');
+    const bubbleEl = document.getElementById('game2-bubble-display');
+    if (statusEl) { statusEl.textContent = "❄️ Připrav se na další kru..."; statusEl.style.display = 'block'; }
+    if (bubbleEl) { bubbleEl.textContent = "Soustřeď se, poslech začíná..."; bubbleEl.style.display = 'block'; }
+    
+    setTimeout(() => {
+        if (gameActive) startNewRound();
+    }, 2200);
+}
+
 // --- LOGIKA HRY ---
 async function startGame2() {
     const creditCheck = await checkAndConsumeCredit();
@@ -175,7 +210,7 @@ async function startGame2() {
     score = 0;
     roundNumber = 1;
     visualCracks = 0;
-    upgrades = { scarf: false, gloves: false, hat: false };
+    upgrades = { scarf: false, gloves: false, hat: false, boots: false, coat: false, pet: false };
     cameraX = 0;
     gameActive = true;
 
@@ -206,14 +241,29 @@ function startNewRound() {
     if (difficulty === 'easy') seqLength = 3;
     if (difficulty === 'hard') seqLength = 5;
 
+    // PO 9. KŘE KAŽDÝCH 5 KER PŘIDEJ ČÍSLO NAVÍC
+    if (roundNumber > 9) {
+        let extraNumbers = Math.floor((roundNumber - 9) / 5) + 1;
+        seqLength += extraNumbers;
+    }
+
+    // PROGRESIVNÍ ROZSAH ČÍSEL AŽ DO 999
     let maxNumber = 10;
-    if (roundNumber > 9) maxNumber = 100;
+    if (roundNumber > 18) maxNumber = 999;
+    else if (roundNumber > 15) maxNumber = 500;
+    else if (roundNumber > 12) maxNumber = 250;
+    else if (roundNumber > 9) maxNumber = 100;
     else if (roundNumber > 6) maxNumber = 50;
     else if (roundNumber > 3) maxNumber = 20;
 
+    // GENEROVÁNÍ BEZ DVOU STEJNÝCH ČÍSEL PO SOBĚ
     targetSequence = [];
     for (let i = 0; i < seqLength; i++) {
-        targetSequence.push(Math.floor(Math.random() * maxNumber) + 1);
+        let num;
+        do {
+            num = Math.floor(Math.random() * maxNumber) + 1;
+        } while (i > 0 && num === targetSequence[i - 1]);
+        targetSequence.push(num);
     }
 
     playAuditorySequence();
@@ -234,13 +284,21 @@ async function playAuditorySequence() {
         if (bubbleEl) bubbleEl.textContent = "🎵 ???";
 
         await speakNumberPromise(num, langA);
-        await delay(350); 
+        await delay(400); 
     }
 
     if (!gameActive) return;
     gameState = 'listening';
     if (statusEl) statusEl.textContent = "🎤 Teď ty! Zopakuj sekvenci ve správném pořadí...";
-    if (bubbleEl) bubbleEl.textContent = "Mluvte...";
+    
+    // ZAPOJENÍ POMOCI MAZLÍČKA S 1. ČÍSLEM
+    if (bubbleEl) {
+        if (upgrades.pet) {
+            bubbleEl.textContent = `Mluvte... 🐧 Pomocník napovídá 1. číslo: ${targetSequence[0]}`;
+        } else {
+            bubbleEl.textContent = "Mluvte...";
+        }
+    }
 
     if (recognition) {
         recognition.lang = langB;
@@ -259,7 +317,7 @@ function speakNumberPromise(num, lang) {
         let word = (num <= 10 && languageWords[lang]) ? languageWords[lang][num] : num.toString();
         const utterance = new SpeechSynthesisUtterance(word);
         utterance.lang = lang;
-        utterance.rate = 0.85;
+        utterance.rate = 0.82;
 
         const voices = window.speechSynthesis.getVoices();
         const matchingVoice = voices.find(voice => 
@@ -278,7 +336,8 @@ function speakNumberPromise(num, lang) {
 function updateStatusDisplay(text) {
     const bubbleEl = document.getElementById('game2-bubble-display');
     if (bubbleEl && text.trim() && gameState === 'listening') {
-        bubbleEl.textContent = `Slyším: "${text.trim()}"`;
+        let petHint = upgrades.pet ? `🐧 (Aura: 1. je ${targetSequence[0]}) | ` : "";
+        bubbleEl.textContent = `${petHint}Slyším: "${text.trim()}"`;
     }
 }
 
@@ -387,39 +446,36 @@ function handleKeyDown(e) {
     if (!gameActive || gameState !== 'shop') return;
 
     const key = e.key.toLowerCase();
-    const items = [
-        { id: 'scarf', cost: 5 },
-        { id: 'gloves', cost: 5 },
-        { id: 'hat', cost: 10 }
-    ];
+    const currentShopItems = getAvailableShopItems();
 
     let targetIdx = -1;
-    if (key === 'a') targetIdx = 0; // Levý předmět (Šála)
-    if (key === 'w') targetIdx = 1; // Prostřední předmět (Rukavice)
-    if (key === 'd') targetIdx = 2; // Pravý předmět (Čepice)
+    if (key === 'a') targetIdx = 0; 
+    if (key === 'w') targetIdx = 1; 
+    if (key === 'd') targetIdx = 2; 
 
-    // Pokud stiskl platnou klávesu pro nákup
-    if (targetIdx !== -1) {
-        let item = items[targetIdx];
-        if (!upgrades[item.id] && coins >= item.cost) {
+    if (targetIdx !== -1 && targetIdx < currentShopItems.length) {
+        let item = currentShopItems[targetIdx];
+        if (coins >= item.cost) {
             coins -= item.cost;
             upgrades[item.id] = true;
-            maxLives++; 
-            lives++; 
             
-            gameState = 'setup';
-            startNewRound();
+            if (item.id === 'coat') {
+                maxLives += 2;
+                lives += 2;
+            } else if (item.id !== 'pet') {
+                maxLives++;
+                lives++;
+            }
+            
+            exitShopToNewRound();
         }
     }
 
-    // Mezerník nebo Enter pro pokračování dál bez nákupu
     if (e.key === ' ' || e.key === 'Enter') {
-        e.preventDefault(); // Zabrání scrollování stránky mezerníkem
-        gameState = 'setup';
-        startNewRound();
+        e.preventDefault(); 
+        exitShopToNewRound();
     }
 
-    // Escape pro opuštění hry
     if (e.key === 'Escape') {
         terminateGame();
     }
@@ -436,37 +492,38 @@ function handleCanvasClick(e) {
     const mouseY = (e.clientY - rect.top) * scaleY;
 
     if (gameState === 'shop') {
+        const currentShopItems = getAvailableShopItems();
         const cardWidth = 140;
         const cardHeight = 110;
         const cardY = activeCanvas.height / 2 - 50; 
-        const spacing = (activeCanvas.width - (3 * cardWidth)) / 4;
-
-        const items = [
-            { id: 'scarf', cost: 5 },
-            { id: 'gloves', cost: 5 },
-            { id: 'hat', cost: 10 }
-        ];
+        const totalCards = currentShopItems.length;
+        const spacing = totalCards > 0 ? (activeCanvas.width - (totalCards * cardWidth)) / (totalCards + 1) : activeCanvas.width / 2;
 
         let successfullyPurchased = false;
 
-        items.forEach((item, idx) => {
+        currentShopItems.forEach((item, idx) => {
             let itemX = spacing + idx * (cardWidth + spacing);
             if (mouseX >= itemX && mouseX <= itemX + cardWidth &&
                 mouseY >= cardY && mouseY <= cardY + cardHeight) {
                 
-                if (!upgrades[item.id] && coins >= item.cost) {
+                if (coins >= item.cost) {
                     coins -= item.cost;
                     upgrades[item.id] = true;
-                    maxLives++; 
-                    lives++; 
+                    
+                    if (item.id === 'coat') {
+                        maxLives += 2;
+                        lives += 2;
+                    } else if (item.id !== 'pet') {
+                        maxLives++;
+                        lives++;
+                    }
                     successfullyPurchased = true;
                 }
             }
         });
 
         if (successfullyPurchased) {
-            gameState = 'setup';
-            startNewRound();
+            exitShopToNewRound();
             return;
         }
 
@@ -474,8 +531,7 @@ function handleCanvasClick(e) {
         let nextBtnX = activeCanvas.width / 2 - nextBtnW / 2;
         let nextBtnY = cardY + cardHeight + 20;
         if (mouseX >= nextBtnX && mouseX <= nextBtnX + nextBtnW && mouseY >= nextBtnY && mouseY <= nextBtnY + nextBtnH) {
-            gameState = 'setup';
-            startNewRound();
+            exitShopToNewRound();
             return;
         }
 
@@ -515,8 +571,6 @@ function delay(ms) {
 function gameRenderLoop() {
     if (!ctx || !canvas || !gameActive) return;
 
-    // OPRAVA: Naplánujeme další snímek ihned na začátku. 
-    // Pokud stavy níže zavolají 'return;', smyčka se už nezastaví.
     requestAnimationFrame(gameRenderLoop);
 
     // --- SÍŇ SLÁVY ---
@@ -573,53 +627,49 @@ function gameRenderLoop() {
         ctx.fillStyle = "#f1c40f";
         ctx.fillText(`Tvoje peněženka: 🪙 ${coins} mincí`, canvas.width / 2, 62);
 
+        const currentShopItems = getAvailableShopItems();
         const cardWidth = 140;
         const cardHeight = 110;
         const cardY = canvas.height / 2 - 50; 
-        const spacing = (canvas.width - (3 * cardWidth)) / 4;
+        
+        const totalCards = currentShopItems.length;
+        const spacing = totalCards > 0 ? (canvas.width - (totalCards * cardWidth)) / (totalCards + 1) : canvas.width / 2;
 
-        const items = [
-            { id: 'scarf', name: 'Hřejivá šála (+1 ❤️ MAX)', cost: 5, icon: '🧣' },
-            { id: 'gloves', name: 'Rukavice (+1 ❤️ MAX)', cost: 5, icon: '🧤' },
-            { id: 'hat', name: 'Polární čepice (+1 ❤️ MAX)', cost: 10, icon: '👑' }
-        ];
+        if (totalCards === 0) {
+            ctx.fillStyle = "#48bb78";
+            ctx.font = "bold 16px sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText("🎉 Všechny předměty jsou zakoupeny! Jsi plný profík.", canvas.width / 2, cardY + 40);
+        }
 
-        items.forEach((item, idx) => {
+        currentShopItems.forEach((item, idx) => {
             let itemX = spacing + idx * (cardWidth + spacing);
             
-            // Vizuální nápověda klávesy nad kartou
-            if (!upgrades[item.id]) {
-                ctx.fillStyle = "#cbd5e1";
-                ctx.font = "bold 11px sans-serif";
-                ctx.textAlign = "center";
-                const keysHint = ["Klávesa [A]", "Klávesa [W]", "Klávesa [D]"];
-                ctx.fillText(keysHint[idx], itemX + cardWidth / 2, cardY - 8);
-            }
+            ctx.fillStyle = "#cbd5e1";
+            ctx.font = "bold 11px sans-serif";
+            ctx.textAlign = "center";
+            const keysHint = ["Klávesa [A]", "Klávesa [W]", "Klávesa [D]"];
+            ctx.fillText(keysHint[idx], itemX + cardWidth / 2, cardY - 8);
 
-            ctx.fillStyle = upgrades[item.id] ? "#4a5568" : "#2d3748";
-            ctx.strokeStyle = upgrades[item.id] ? "#a0aec0" : "#3182ce";
+            ctx.fillStyle = "#2d3748";
+            ctx.strokeStyle = "#3182ce";
             ctx.lineWidth = 2;
             ctx.fillRect(itemX, cardY, cardWidth, cardHeight);
             ctx.strokeRect(itemX, cardY, cardWidth, cardHeight);
 
             ctx.fillStyle = "#ffffff";
-            ctx.font = "bold 11px sans-serif";
+            ctx.font = "bold 10px sans-serif";
             ctx.textAlign = "center";
             ctx.fillText(item.name, itemX + cardWidth / 2, cardY + 22);
             ctx.font = "26px sans-serif";
             ctx.fillText(item.icon, itemX + cardWidth / 2, cardY + 60);
 
             ctx.font = "12px sans-serif";
-            if (upgrades[item.id]) {
-                ctx.fillStyle = "#48bb78";
-                ctx.fillText("Zakoupeno ✔️", itemX + cardWidth / 2, cardY + 95);
-            } else {
-                ctx.fillStyle = coins >= item.cost ? "#f6e05e" : "#e53e3e";
-                ctx.fillText(`Cena: 🪙 ${item.cost}`, itemX + cardWidth / 2, cardY + 95);
-            }
+            ctx.fillStyle = coins >= item.cost ? "#f6e05e" : "#e53e3e";
+            ctx.fillText(`Cena: 🪙 ${item.cost}`, itemX + cardWidth / 2, cardY + 95);
         });
 
-        // Tlačítko 1: Vstoupit na novou kru (Zelené)
+        // Tlačítko 1: Vstoupit na novou kru
         let nextBtnW = 240; let nextBtnH = 38;
         let nextBtnX = canvas.width / 2 - nextBtnW / 2;
         let nextBtnY = cardY + cardHeight + 20;
@@ -632,7 +682,7 @@ function gameRenderLoop() {
         ctx.textAlign = "center";
         ctx.fillText("Vstoupit na novou kru [Mezerník] ➔", canvas.width / 2, nextBtnY + 24);
 
-        // Tlačítko 2: Opustit hru (Červené)
+        // Tlačítko 2: Opustit hru
         let quitBtnW = 240; let quitBtnH = 38;
         let quitBtnX = canvas.width / 2 - quitBtnW / 2;
         let quitBtnY = nextBtnY + nextBtnH + 12;
@@ -646,7 +696,7 @@ function gameRenderLoop() {
         return;
     }
 
-    // --- STANDARDNÍ SCÉNA (SKÁKÁNÍ ZLEVA DOPRAVA) ---
+    // --- STANDARDNÍ SCÉNA ---
     ctx.fillStyle = "#1a365d";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -710,18 +760,18 @@ function gameRenderLoop() {
     ctx.font = "bold 12px sans-serif";
     ctx.textAlign = "right"; 
     const flagMap = { 'cs-CZ': '🇨🇿 CZ', 'en-US': '🇺🇸 EN', 'de-DE': '🇩🇪 DE', 'fr-FR': '🇫🇷 FR', 'es-ES': '🇪🇸 ES', 'fi-FI': '🇫🇮 FI' };
-    ctx.fillText(`🎧 ${flagMap[langA] || langA}  ➔  🗣️ ${flagMap[langB] || langB}`, canvas.width - 15, 65); 
+    ctx.fillText(`🎧 ${flagMap[langA] || langA}  ➔  🗣️ ${flagMap[langB] || langB}`, canvas.width - 15, 65); 
 
     ctx.fillStyle = "#ffffff";
     ctx.textAlign = "right";
     let hearts = lives > 0 ? "❤️".repeat(lives) + "🖤".repeat(maxLives - lives) : "💀 UTOPEN";
     ctx.fillText(`Stabilita kry: ${hearts}`, canvas.width - 15, 25);
 
-    let currentLimit = roundNumber > 9 ? 100 : roundNumber > 6 ? 50 : roundNumber > 3 ? 20 : 10;
+    let currentLimit = roundNumber > 18 ? 999 : roundNumber > 15 ? 500 : roundNumber > 12 ? 250 : roundNumber > 9 ? 100 : roundNumber > 6 ? 50 : roundNumber > 3 ? 20 : 10;
     ctx.fillText(`Rozsah čísel: 1 - ${currentLimit}`, canvas.width - 15, 45);
 }
 
-// --- POMOCNÉ VYKRESLOCACÍ FUNKCE ---
+// --- POMOCNÉ VYKRESLOVACÍ FUNKCE ---
 function drawFloeIce(cracks) {
     ctx.fillStyle = "#e2e8f0";
     ctx.strokeStyle = "#90cdf4";
@@ -735,26 +785,28 @@ function drawFloeIce(cracks) {
     ctx.fill();
     ctx.stroke();
 
+    ctx.strokeStyle = "#2d3748";
     if (cracks >= 1) {
-        ctx.strokeStyle = "#2d3748";
         ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.moveTo(-60, -30);
-        ctx.lineTo(-20, 10);
-        ctx.lineTo(-40, 45);
-        ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(-60, -30); ctx.lineTo(-20, 10); ctx.lineTo(-40, 45); ctx.stroke();
     }
     if (cracks >= 2) {
-        ctx.beginPath();
-        ctx.moveTo(80, -35);
-        ctx.lineTo(30, -5);
-        ctx.lineTo(50, 40);
-        ctx.stroke();
+        ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(80, -35); ctx.lineTo(30, -5); ctx.lineTo(50, 40); ctx.stroke();
         ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(-20, 10);
-        ctx.lineTo(30, -5);
-        ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(-20, 10); ctx.lineTo(30, -5); ctx.stroke();
+    }
+    if (cracks >= 3) {
+        ctx.lineWidth = 2.5;
+        ctx.beginPath(); ctx.moveTo(0, -42); ctx.lineTo(-10, -15); ctx.lineTo(15, 5); ctx.stroke();
+    }
+    if (cracks >= 4) {
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(-115, 10); ctx.lineTo(-70, 15); ctx.lineTo(-40, 45); ctx.stroke();
+    }
+    if (cracks >= 5) {
+        ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(120, 10); ctx.lineTo(70, 20); ctx.lineTo(30, -5); ctx.stroke();
     }
 }
 
@@ -780,9 +832,31 @@ function drawPlayer(pX, pY) {
         ctx.fillStyle = "#ffffff"; ctx.font = "bold 14px sans-serif"; ctx.textAlign = "center"; ctx.fillText("SPLOUCH!", PLAYER_X_BASE, PLAYER_Y_BASE + 15);
         return;
     }
+    // Tělo panáčka
     ctx.fillStyle = "#e53e3e"; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(pX - 12, pY - 5, 24, 26, 6) : ctx.fillRect(pX - 12, pY - 5, 24, 26); ctx.fill();
+    
+    // Vizuální doplňky z obchodu
+    if (upgrades.boots) { ctx.fillStyle = "#4a5568"; ctx.fillRect(pX - 13, pY + 18, 8, 4); ctx.fillRect(pX + 5, pY + 18, 8, 4); }
     if (upgrades.gloves) { ctx.fillStyle = "#2d3748"; ctx.beginPath(); ctx.arc(pX - 15, pY + 10, 4, 0, Math.PI * 2); ctx.arc(pX + 15, pY + 10, 4, 0, Math.PI * 2); ctx.fill(); }
+    if (upgrades.coat) { ctx.fillStyle = "#2c5282"; ctx.fillRect(pX - 10, pY + 2, 20, 15); }
     if (upgrades.scarf) { ctx.fillStyle = "#31bafc"; ctx.fillRect(pX - 11, pY - 2, 22, 5); ctx.fillStyle = "#1d8cf8"; ctx.fillRect(pX + 4, pY + 3, 5, 11); }
-    if (upgrades.hat) { ctx.fillStyle = "#ffeb3b"; ctx.beginPath(); ctx.arc(pX, pY - 12, 8, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = "#9b59b6"; ctx.beginPath(); ctx.moveTo(pX - 9, pY - 14); ctx.lineTo(pX - 5, pY - 22); ctx.lineTo(pX, pY - 16); ctx.lineTo(pX + 5, pY - 22); ctx.lineTo(pX + 9, pY - 14); ctx.closePath(); ctx.fill(); } else { ctx.fillStyle = "#ffeb3b"; ctx.beginPath(); ctx.arc(pX, pY - 12, 8, 0, Math.PI * 2); ctx.fill(); }
+    
+    // Zimní čepice s bambulí
+    if (upgrades.hat) { 
+        ctx.fillStyle = "#ffeb3b"; ctx.beginPath(); ctx.arc(pX, pY - 12, 8, 0, Math.PI * 2); ctx.fill(); 
+        ctx.fillStyle = "#e53e3e"; ctx.beginPath(); ctx.arc(pX, pY - 20, 3, 0, Math.PI * 2); ctx.fill();
+    } else { 
+        ctx.fillStyle = "#ffeb3b"; ctx.beginPath(); ctx.arc(pX, pY - 12, 8, 0, Math.PI * 2); ctx.fill(); 
+    }
+    
+    // Oči
     ctx.fillStyle = "#000000"; ctx.fillRect(pX - 4, pY - 15, 2, 3); ctx.fillRect(pX + 2, pY - 15, 2, 3);
+
+    // Vykreslení aktivního mazlíčka vedle panáčka
+    if (upgrades.pet) {
+        let petBob = Math.sin(Date.now() * 0.006) * 2;
+        ctx.fillStyle = "#1a202c"; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(pX + 22, pY + 5 + petBob, 14, 16, 4) : ctx.fillRect(pX + 22, pY + 5 + petBob, 14, 16); ctx.fill();
+        ctx.fillStyle = "#ffffff"; ctx.fillRect(pX + 25, pY + 9 + petBob, 8, 9);
+        ctx.fillStyle = "#ed8936"; ctx.fillRect(pX + 34, pY + 10 + petBob, 4, 3);
+    }
 }
