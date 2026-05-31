@@ -381,7 +381,6 @@ function handleGameEnd() {
 
     gameState = 'highscore';
     gameActive = true; 
-    requestAnimationFrame(gameRenderLoop);
 }
 
 function handleKeyDown(e) {
@@ -408,7 +407,6 @@ function handleKeyDown(e) {
             maxLives++; 
             lives++; 
             
-            // OPRAVA: Po úspěšném nákupu okamžitě opustíme obchod a jdeme do hry
             gameState = 'setup';
             startNewRound();
         }
@@ -517,6 +515,10 @@ function delay(ms) {
 function gameRenderLoop() {
     if (!ctx || !canvas || !gameActive) return;
 
+    // OPRAVA: Naplánujeme další snímek ihned na začátku. 
+    // Pokud stavy níže zavolají 'return;', smyčka se už nezastaví.
+    requestAnimationFrame(gameRenderLoop);
+
     // --- SÍŇ SLÁVY ---
     if (gameState === 'highscore') {
         ctx.fillStyle = "#111827";
@@ -585,7 +587,7 @@ function gameRenderLoop() {
         items.forEach((item, idx) => {
             let itemX = spacing + idx * (cardWidth + spacing);
             
-            // Vizuální nápověda klávesy nad kartou (zobrazí se, jen pokud není zakoupeno)
+            // Vizuální nápověda klávesy nad kartou
             if (!upgrades[item.id]) {
                 ctx.fillStyle = "#cbd5e1";
                 ctx.font = "bold 11px sans-serif";
@@ -617,7 +619,7 @@ function gameRenderLoop() {
             }
         });
 
-        // Tlačítko 1: Vstoupit na novou kru (Zelené) + nápověda [Mezerník]
+        // Tlačítko 1: Vstoupit na novou kru (Zelené)
         let nextBtnW = 240; let nextBtnH = 38;
         let nextBtnX = canvas.width / 2 - nextBtnW / 2;
         let nextBtnY = cardY + cardHeight + 20;
@@ -630,7 +632,7 @@ function gameRenderLoop() {
         ctx.textAlign = "center";
         ctx.fillText("Vstoupit na novou kru [Mezerník] ➔", canvas.width / 2, nextBtnY + 24);
 
-        // Tlačítko 2: Opustit hru (Červené) + nápověda [Esc]
+        // Tlačítko 2: Opustit hru (Červené)
         let quitBtnW = 240; let quitBtnH = 38;
         let quitBtnX = canvas.width / 2 - quitBtnW / 2;
         let quitBtnY = nextBtnY + nextBtnH + 12;
@@ -708,7 +710,7 @@ function gameRenderLoop() {
     ctx.font = "bold 12px sans-serif";
     ctx.textAlign = "right"; 
     const flagMap = { 'cs-CZ': '🇨🇿 CZ', 'en-US': '🇺🇸 EN', 'de-DE': '🇩🇪 DE', 'fr-FR': '🇫🇷 FR', 'es-ES': '🇪🇸 ES', 'fi-FI': '🇫🇮 FI' };
-    ctx.fillText(`🎧 ${flagMap[langA] || langA}  ➔  🗣️ ${flagMap[langB] || langB}`, canvas.width - 15, 65); 
+    ctx.fillText(`🎧 ${flagMap[langA] || langA}  ➔  🗣️ ${flagMap[langB] || langB}`, canvas.width - 15, 65); 
 
     ctx.fillStyle = "#ffffff";
     ctx.textAlign = "right";
@@ -717,13 +719,9 @@ function gameRenderLoop() {
 
     let currentLimit = roundNumber > 9 ? 100 : roundNumber > 6 ? 50 : roundNumber > 3 ? 20 : 10;
     ctx.fillText(`Rozsah čísel: 1 - ${currentLimit}`, canvas.width - 15, 45);
-
-    if (gameActive) {
-        requestAnimationFrame(gameRenderLoop);
-    }
 }
 
-// --- POMOCNÉ VYKRESLOVACÍ FUNKCE ---
+// --- POMOCNÉ VYKRESLOCACÍ FUNKCE ---
 function drawFloeIce(cracks) {
     ctx.fillStyle = "#e2e8f0";
     ctx.strokeStyle = "#90cdf4";
